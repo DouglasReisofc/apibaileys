@@ -1,10 +1,45 @@
-const { makeInMemoryStore } = require('@whiskeysockets/baileys');
 const { getStoreCollection } = require('../db');
+
+function makeSimpleStore() {
+  const store = {
+    chats: {
+      data: new Map(),
+      insertAll(chats = []) { chats.forEach(c => this.data.set(c.id, c)); },
+      all() { return Array.from(this.data.values()); }
+    },
+    messages: {
+      messages: {},
+      insert(jid, msgs = []) {
+        const entry = this.messages[jid] = this.messages[jid] || { array: [] };
+        entry.array.push(...msgs);
+      }
+    },
+    bind(ev) {
+      ev.on('chats.upsert', chats => this.chats.insertAll(chats));
+      ev.on('messages.upsert', ({ messages }) => {
+        for (const m of messages) {
+          const jid = m.key.remoteJid;
+          this.messages[jid] = this.messages[jid] || { array: [] };
+          this.messages[jid].array.push(m);
+        }
+      });
+      ev.on('messages.update', updates => {
+        for (const { key, update } of updates) {
+          const arr = this.messages[key.remoteJid]?.array;
+          if (!arr) continue;
+          const idx = arr.findIndex(m => m.key.id === key.id);
+          if (idx >= 0) arr[idx] = { ...arr[idx], ...update };
+        }
+      });
+    }
+  };
+  return store;
+}
 
 async function useMongoStore(id, sock) {
   const col = await getStoreCollection();
   const record = await col.findOne({ id }) || {};
-  const store = makeInMemoryStore({});
+  const store = makeSimpleStore();
 
   // load chats & messages
   if (record.chats) {
