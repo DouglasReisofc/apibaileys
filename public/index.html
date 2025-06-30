@@ -64,6 +64,7 @@ async function loadSessions() {
   const res = await fetch('/api/sessions');
   const data = await res.json();
   const sel = document.getElementById('sessionSelect');
+  const prev = sel.value;
   sel.innerHTML = '';
   data.sessions.forEach(s => {
     const opt = document.createElement('option');
@@ -71,6 +72,12 @@ async function loadSessions() {
     opt.textContent = `${s.id} (${s.status})`;
     sel.appendChild(opt);
   });
+  if (prev) {
+    sel.value = prev;
+  }
+  if (!sel.value && data.sessions.length) {
+    sel.value = data.sessions[0].id;
+  }
   if (sel.value) startPolling(sel.value);
 }
 
