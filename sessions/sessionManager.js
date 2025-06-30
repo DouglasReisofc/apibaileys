@@ -137,13 +137,14 @@ function updateSession(id, details) {
   return sessions[id];
 }
 
-function deleteSession(id) {
+async function deleteSession(id) {
   const existing = sessions[id];
-  if (!existing) return;
-  existing.shouldReconnect = false;
-  try { existing.sock.ws.close(); } catch {}
-  delete sessions[id];
-  removeRecord(id).catch(() => {});
+  if (existing) {
+    existing.shouldReconnect = false;
+    try { existing.sock.ws.close(); } catch {}
+    delete sessions[id];
+  }
+  await removeRecord(id);
 }
 
 async function listSessions() {

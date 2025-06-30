@@ -77,10 +77,14 @@ router.post('/session/:id/reconnect', async (req, res) => {
   }
 });
 
-router.delete('/session/:id', (req, res) => {
+router.delete('/session/:id', async (req, res) => {
   const { id } = req.params;
-  deleteSession(id);
-  res.json({ status: 'deleted', id });
+  try {
+    await deleteSession(id);
+    res.json({ status: 'deleted', id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.post('/message', sendMessage);
