@@ -10,6 +10,17 @@ const {
   listSessions
 } = require('../sessions/sessionManager');
 const { sendMessage } = require('../controllers/messageController');
+const {
+  createGroup,
+  updateSubject,
+  addParticipants,
+  removeParticipants,
+  promoteParticipants,
+  demoteParticipants,
+  leaveGroup,
+  fetchMetadata
+} = require('../controllers/groupController');
+const { fetchStatus, block, unblock } = require('../controllers/contactController');
 
 router.get('/sessions', (req, res) => {
   res.json({ sessions: listSessions() });
@@ -73,5 +84,20 @@ router.delete('/session/:id', (req, res) => {
 });
 
 router.post('/message', sendMessage);
+
+// Group endpoints
+router.post('/group', createGroup);
+router.get('/group/:id', fetchMetadata);
+router.post('/group/:id/subject', updateSubject);
+router.post('/group/:id/add', addParticipants);
+router.post('/group/:id/remove', removeParticipants);
+router.post('/group/:id/promote', promoteParticipants);
+router.post('/group/:id/demote', demoteParticipants);
+router.post('/group/:id/leave', leaveGroup);
+
+// Contact actions (PV)
+router.get('/contact/:id/status', fetchStatus);
+router.post('/contact/:id/block', block);
+router.post('/contact/:id/unblock', unblock);
 
 module.exports = router;

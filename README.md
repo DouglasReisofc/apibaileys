@@ -1,5 +1,6 @@
 📞 API WhatsApp com Baileys – Projeto #apibaileys
-Crie uma API robusta para integração com o WhatsApp usando a biblioteca Baileys, com foco em múltiplos agentes (sessions), envio de mensagens, recebimento de eventos e controle via HTTP.
+Crie uma API robusta para integração com o WhatsApp usando a biblioteca Baileys,
+ com foco em múltiplos agentes (sessions), envio de mensagens, recebimento de eventos e controle via HTTP.
 
 🛠️ Requisitos
 Node.js 18+
@@ -59,3 +60,19 @@ Acesse `http://localhost:3000` para visualizar o painel.
 - `GET /api/session/:id/status` – retorna o status da sessão.
 - `GET /api/session/:id/qr` – obtém o QR code para autenticação.
 - `POST /api/message` – envia uma mensagem informando `sessionId`.
+
+#### Ações de Grupos
+
+- `POST /api/group` – cria um grupo passando `sessionId`, `subject` e `participants`.
+- `GET /api/group/:id` – obtém dados do grupo usando `sessionId` na query.
+- `POST /api/group/:id/subject` – altera o assunto do grupo.
+- `POST /api/group/:id/add` – adiciona participantes.
+- `POST /api/group/:id/remove` – remove participantes.
+- `POST /api/group/:id/promote` – promove participantes.
+- `POST /api/group/:id/demote` – rebaixa participantes.
+- `POST /api/group/:id/leave` – sai do grupo.
+ 
+#### Ações de Contatos
+- `GET /api/contact/:id/status` – busca o status do contato informando `sessionId` na query.
+- `POST /api/contact/:id/block` – bloqueia o contato.
+- `POST /api/contact/:id/unblock` – desbloqueia o contato.
