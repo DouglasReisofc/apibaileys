@@ -11,16 +11,27 @@
   <h1 class="mb-4">Baileys Multi Session</h1>
   <div class="mb-3">
     <input id="sessionId" class="form-control" placeholder="Session ID" />
-    <button id="createBtn" class="btn btn-primary mt-2">Create Session</button>
+    <div class="mt-2">
+      <button id="createBtn" class="btn btn-primary">Create Session</button>
+      <button id="restartBtn" class="btn btn-warning ms-2">Restart</button>
+    </div>
   </div>
+
   <div class="mb-3">
+    <div id="status" class="mb-2 fw-bold"></div>
+    <canvas id="qrCanvas" class="mb-3"></canvas>
     <input id="number" class="form-control" placeholder="Number" />
     <textarea id="message" class="form-control mt-2" placeholder="Message"></textarea>
     <button id="sendBtn" class="btn btn-success mt-2">Send Message</button>
   </div>
   <pre id="log" class="bg-white p-2"></pre>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script>
+let poll;
+function log(obj) {
+  document.getElementById('log').textContent = JSON.stringify(obj, null, 2);
+}
 async function createSession() {
   const id = document.getElementById('sessionId').value;
   const res = await fetch('/api/session', {
@@ -29,7 +40,8 @@ async function createSession() {
     body: JSON.stringify({id})
   });
   const data = await res.json();
-  document.getElementById('log').textContent = JSON.stringify(data, null, 2);
+  log(data);
+  startPolling(id);
 }
 async function sendMessage() {
   const sessionId = document.getElementById('sessionId').value;
@@ -41,10 +53,43 @@ async function sendMessage() {
     body: JSON.stringify({sessionId, number, message})
   });
   const data = await res.json();
-  document.getElementById('log').textContent = JSON.stringify(data, null, 2);
+  log(data);
 }
+
+async function restart() {
+  const id = document.getElementById('sessionId').value;
+  const res = await fetch(`/api/session/${id}/restart`, { method: 'POST' });
+  const data = await res.json();
+  log(data);
+  startPolling(id);
+}
+
+function startPolling(id) {
+  if (poll) clearInterval(poll);
+  fetchStatus(id); // initial
+  poll = setInterval(() => fetchStatus(id), 3000);
+}
+
+async function fetchStatus(id) {
+  const res = await fetch(`/api/session/${id}/status`);
+  const { status } = await res.json();
+  document.getElementById('status').textContent = `Status: ${status}`;
+  if (status === 'qr') {
+    const qrRes = await fetch(`/api/session/${id}/qr`);
+    if (qrRes.ok) {
+      const { qr } = await qrRes.json();
+      QRCode.toCanvas(document.getElementById('qrCanvas'), qr);
+    }
+  } else {
+    const canvas = document.getElementById('qrCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+}
+
 document.getElementById('createBtn').addEventListener('click', createSession);
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('restartBtn').addEventListener('click', restart);
 </script>
 </body>
 </html>

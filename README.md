@@ -48,3 +48,11 @@ node index.js
 ```
 
 Acesse `http://localhost:3000` para visualizar o painel.
+
+### Endpoints principais
+
+- `POST /api/session` – cria uma nova sessão.
+- `GET /api/session/:id/status` – retorna o status da sessão.
+- `GET /api/session/:id/qr` – obtém o QR code para autenticação.
+- `POST /api/session/:id/restart` – reinicia a sessão.
+- `POST /api/message` – envia uma mensagem.
