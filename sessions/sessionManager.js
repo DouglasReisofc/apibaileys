@@ -49,7 +49,8 @@ function initSessionRecord(id, sock, saveCreds, webhook) {
     saveCreds,
     qr: null,
     status: 'connecting',
-    webhook: webhook || null
+    webhook: webhook || null,
+    shouldReconnect: true
   };
 }
 
@@ -95,8 +96,10 @@ async function createSession(id, webhook) {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       if (statusCode === DisconnectReason.loggedOut) {
         delete sessions[id];
-      } else if (sessions[id]) {
+      } else if (session.shouldReconnect) {
         createSession(id);
+      } else {
+        delete sessions[id];
       }
     }
   });
@@ -120,6 +123,7 @@ function getSessionQR(id) {
 async function restartSession(id) {
   const existing = sessions[id];
   if (existing) {
+    existing.shouldReconnect = false;
     try { existing.sock.ws.close(); } catch {}
     delete sessions[id];
   }
@@ -136,6 +140,7 @@ function updateSession(id, details) {
 function deleteSession(id) {
   const existing = sessions[id];
   if (!existing) return;
+  existing.shouldReconnect = false;
   try { existing.sock.ws.close(); } catch {}
   delete sessions[id];
   removeRecord(id).catch(() => {});
