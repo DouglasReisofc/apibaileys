@@ -1,7 +1,39 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const { useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { MongoClient } = require('mongodb');
+
+const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const client = new MongoClient(mongoUri);
+let collection;
+
+async function initDb() {
+  if (!collection) {
+    await client.connect();
+    collection = client.db('apibaileys').collection('sessions');
+  }
+  return collection;
+}
 
 const sessions = {};
+
+async function saveRecord(id) {
+  const col = await initDb();
+  const { webhook } = sessions[id];
+  await col.updateOne({ id }, { $set: { id, webhook } }, { upsert: true });
+}
+
+async function removeRecord(id) {
+  const col = await initDb();
+  await col.deleteOne({ id });
+}
+
+async function restoreSessions() {
+  const col = await initDb();
+  const all = await col.find().toArray();
+  for (const { id, webhook } of all) {
+    try { await createSession(id, webhook); } catch {}
+  }
+}
 
 function sendWebhookEvent(id, type, data) {
   const url = sessions[id]?.webhook;
@@ -33,6 +65,7 @@ async function createSession(id, webhook) {
   const sock = makeWASocket({ auth: state });
 
   initSessionRecord(id, sock, saveCreds, webhook);
+  await saveRecord(id);
 
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', (update) => {
@@ -98,6 +131,7 @@ async function restartSession(id) {
 function updateSession(id, details) {
   if (!sessions[id]) return null;
   if (details.webhook !== undefined) sessions[id].webhook = details.webhook;
+  saveRecord(id).catch(() => {});
   return sessions[id];
 }
 
@@ -106,6 +140,7 @@ function deleteSession(id) {
   if (!existing) return;
   try { existing.sock.ws.close(); } catch {}
   delete sessions[id];
+  removeRecord(id).catch(() => {});
 }
 
 function listSessions() {
@@ -123,5 +158,6 @@ module.exports = {
   restartSession,
   updateSession,
   deleteSession,
-  listSessions
+  listSessions,
+  restoreSessions
 };
