@@ -9,6 +9,16 @@
 <body class="bg-light">
 <div class="container py-4">
   <h1 class="mb-4">Baileys Multi Session</h1>
+  <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="dash-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">Dashboard</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab">Docs</button>
+    </li>
+  </ul>
+  <div class="tab-content">
+  <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
   <div class="mb-3">
     <select id="sessionSelect" class="form-select mb-2"></select>
     <input id="sessionId" class="form-control mb-2" placeholder="Session ID" />
@@ -25,9 +35,23 @@
     <canvas id="qrCanvas" class="mb-3"></canvas>
     <input id="number" class="form-control" placeholder="Number" />
     <textarea id="message" class="form-control mt-2" placeholder="Message"></textarea>
-    <button id="sendBtn" class="btn btn-success mt-2">Send Message</button>
+    <div class="form-check mt-2">
+      <input class="form-check-input" type="checkbox" id="ghostCheck">
+      <label class="form-check-label" for="ghostCheck">Ghost mention</label>
+    </div>
+    <input id="replyId" class="form-control mt-2" placeholder="Reply message ID" />
+    <input type="file" id="mediaFile" class="form-control mt-2" />
+    <button id="sendBtn" class="btn btn-success mt-2">Send Text</button>
+    <button id="sendMediaBtn" class="btn btn-secondary mt-2 ms-2">Send Media</button>
+    <input id="deleteMsgId" class="form-control mt-2" placeholder="Delete message ID" />
+    <button id="deleteMsgBtn" class="btn btn-danger mt-2">Delete Msg</button>
   </div>
   <pre id="log" class="bg-white p-2"></pre>
+</div>
+  <div class="tab-pane fade" id="docs" role="tabpanel">
+    <pre id="docsContent" class="bg-white p-3"></pre>
+  </div>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script>
@@ -66,10 +90,56 @@ async function sendMessage() {
   const sessionId = document.getElementById('sessionSelect').value;
   const number = document.getElementById('number').value;
   const message = document.getElementById('message').value;
+  const ghost = document.getElementById('ghostCheck').checked;
+  const quotedId = document.getElementById('replyId').value;
   const res = await fetch('/api/message', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({sessionId, number, message})
+    body: JSON.stringify({sessionId, number, message, ghost, quotedId})
+  });
+  const data = await res.json();
+  log(data);
+}
+
+async function sendMedia() {
+  const sessionId = document.getElementById('sessionSelect').value;
+  const number = document.getElementById('number').value;
+  const ghost = document.getElementById('ghostCheck').checked;
+  const quotedId = document.getElementById('replyId').value;
+  const file = document.getElementById('mediaFile').files[0];
+  if (!file) return alert('Select a file');
+  const toBase64 = f => new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.onerror = err => rej(err);
+    reader.readAsDataURL(f);
+  });
+  const media = await toBase64(file);
+  const res = await fetch('/api/message/media', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      sessionId,
+      number,
+      caption: document.getElementById('message').value,
+      mimetype: file.type,
+      media,
+      ghost,
+      quotedId
+    })
+  });
+  const data = await res.json();
+  log(data);
+}
+
+async function deleteMessage() {
+  const sessionId = document.getElementById('sessionSelect').value;
+  const number = document.getElementById('number').value;
+  const messageId = document.getElementById('deleteMsgId').value;
+  const res = await fetch('/api/message/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ sessionId, number, messageId })
   });
   const data = await res.json();
   log(data);
@@ -118,9 +188,16 @@ document.getElementById('createBtn').addEventListener('click', createSession);
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
 document.getElementById('restartBtn').addEventListener('click', restart);
 document.getElementById('deleteBtn').addEventListener('click', deleteCurrent);
+document.getElementById('sendMediaBtn').addEventListener('click', sendMedia);
+document.getElementById('deleteMsgBtn').addEventListener('click', deleteMessage);
 document.getElementById('sessionSelect').addEventListener('change', (e) => {
   if (e.target.value) startPolling(e.target.value);
 });
+async function loadDocs(){
+  const res = await fetch('/README.md');
+  document.getElementById('docsContent').textContent = await res.text();
+}
+loadDocs();
 loadSessions();
 </script>
 </body>

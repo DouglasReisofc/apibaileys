@@ -59,7 +59,9 @@ Acesse `http://localhost:3000` para visualizar o painel.
 - `POST /api/session/:id/reconnect` – reconecta a sessão.
 - `GET /api/session/:id/status` – retorna o status da sessão.
 - `GET /api/session/:id/qr` – obtém o QR code para autenticação.
-- `POST /api/message` – envia uma mensagem informando `sessionId`.
+- `POST /api/message` – envia texto `{ sessionId, number, message, ghost?, quotedId? }`.
+- `POST /api/message/media` – envia mídia base64 `{ sessionId, number, mimetype, media, caption?, ghost?, quotedId? }`.
+- `POST /api/message/delete` – remove uma mensagem `{ sessionId, number, messageId }`.
 
 #### Ações de Grupos
 
