@@ -68,32 +68,34 @@ async function createSession(id, webhook) {
 
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', (update) => {
+    const session = sessions[id];
+    if (!session) return;
     const { connection, lastDisconnect, qr } = update;
     if (qr) {
-      sessions[id].qr = qr;
-      sessions[id].status = 'qr';
-      sessions[id].wasQr = true;
+      session.qr = qr;
+      session.status = 'qr';
+      session.wasQr = true;
       sendWebhookEvent(id, 'qr', qr);
     }
     if (connection === 'open') {
-      sessions[id].status = 'open';
-      sessions[id].qr = null;
+      session.status = 'open';
+      session.qr = null;
       sendWebhookEvent(id, 'open', {});
-      if (sessions[id].needsRestart) {
-        delete sessions[id].needsRestart;
-      } else if (sessions[id].wasQr) {
-        sessions[id].needsRestart = true;
+      if (session.needsRestart) {
+        delete session.needsRestart;
+      } else if (session.wasQr) {
+        session.needsRestart = true;
         setTimeout(() => restartSession(id), 500);
       }
-      sessions[id].wasQr = false;
+      session.wasQr = false;
     }
     if (connection === 'close') {
-      sessions[id].status = 'closed';
+      session.status = 'closed';
       sendWebhookEvent(id, 'close', {});
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       if (statusCode === DisconnectReason.loggedOut) {
         delete sessions[id];
-      } else {
+      } else if (sessions[id]) {
         createSession(id);
       }
     }

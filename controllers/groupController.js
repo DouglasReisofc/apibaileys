@@ -47,19 +47,19 @@ async function participantsAction(req, res, action) {
 }
 
 async function addParticipants(req, res) {
-  participantsAction(req, res, 'add');
+  return participantsAction(req, res, 'add');
 }
 
 async function removeParticipants(req, res) {
-  participantsAction(req, res, 'remove');
+  return participantsAction(req, res, 'remove');
 }
 
 async function promoteParticipants(req, res) {
-  participantsAction(req, res, 'promote');
+  return participantsAction(req, res, 'promote');
 }
 
 async function demoteParticipants(req, res) {
-  participantsAction(req, res, 'demote');
+  return participantsAction(req, res, 'demote');
 }
 
 async function leaveGroup(req, res) {
