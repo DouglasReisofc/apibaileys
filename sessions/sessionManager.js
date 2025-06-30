@@ -90,11 +90,8 @@ async function createSession(id, webhook) {
     if (connection === 'close') {
       sessions[id].status = 'closed';
       sendWebhookEvent(id, 'close', {});
-      if (
-        lastDisconnect &&
-        lastDisconnect.error &&
-        lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
-      ) {
+      const statusCode = lastDisconnect?.error?.output?.statusCode;
+      if (statusCode && statusCode !== DisconnectReason.loggedOut) {
         createSession(id);
       } else {
         delete sessions[id];
