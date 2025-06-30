@@ -22,8 +22,8 @@ const {
 } = require('../controllers/groupController');
 const { fetchStatus, block, unblock } = require('../controllers/contactController');
 
-router.get('/sessions', (req, res) => {
-  res.json({ sessions: listSessions() });
+router.get('/sessions', async (req, res) => {
+  res.json({ sessions: await listSessions() });
 });
 
 router.post('/session', async (req, res) => {

@@ -141,10 +141,12 @@ function deleteSession(id) {
   removeRecord(id).catch(() => {});
 }
 
-function listSessions() {
-  return Object.keys(sessions).map((id) => ({
-    id,
-    status: sessions[id].status
+async function listSessions() {
+  const col = await getCollection();
+  const records = await col.find().toArray();
+  return records.map((r) => ({
+    id: r.id,
+    status: sessions[r.id]?.status || 'closed'
   }));
 }
 

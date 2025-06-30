@@ -55,7 +55,7 @@ As sessoes disponiveis sao atualizadas a cada 5 segundos, facilitando a selecao 
 
 ### Endpoints principais
 
-- `GET /api/sessions` – lista sessões ativas.
+- `GET /api/sessions` – lista todas as sessões salvas no banco com seu status.
 - `POST /api/session` – cria ou atualiza uma sessão `{ id, webhook }`.
 - `PUT /api/session/:id` – atualiza dados da sessão.
 - `DELETE /api/session/:id` – remove a sessão.
