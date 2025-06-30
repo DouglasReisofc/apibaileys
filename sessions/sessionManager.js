@@ -26,7 +26,8 @@ async function removeRecord(id) {
   await col.deleteOne({ id });
 }
 
-async function restoreSessions() {
+// restore all saved instances from the database on startup
+async function restoreInstances() {
   const col = await getCollection();
   const all = await col.find().toArray();
   for (const { id, webhook, apiKey } of all) {
