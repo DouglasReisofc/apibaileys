@@ -37,3 +37,14 @@ apibaileys/
 │   └── index.js
 └── utils/
     └── logger.js
+
+## Executando
+
+Instale as dependências e inicie o servidor:
+
+```bash
+npm install
+node index.js
+```
+
+Acesse `http://localhost:3000` para visualizar o painel.
