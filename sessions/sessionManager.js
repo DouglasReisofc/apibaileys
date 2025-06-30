@@ -91,7 +91,7 @@ async function createInstance(id, webhook, apiKey) {
         delete session.needsRestart;
       } else if (session.wasQr) {
         session.needsRestart = true;
-        setTimeout(() => restartInstance(id), 500);
+        setTimeout(() => restartInstance(id), 1000);
       }
       session.wasQr = false;
     }
@@ -139,6 +139,11 @@ function getInstanceQR(id) {
 async function restartInstance(id) {
   const existing = sessions[id];
   if (existing) {
+    if (existing.saveCreds) {
+      try {
+        await existing.saveCreds();
+      } catch {}
+    }
     existing.shouldReconnect = false;
     try { existing.sock.ws.close(); } catch {}
     delete sessions[id];
