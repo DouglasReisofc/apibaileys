@@ -1,6 +1,5 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const { useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const fetch = require('node-fetch');
 
 const sessions = {};
 
