@@ -17,8 +17,8 @@ const sessions = {};
 
 async function saveRecord(id) {
   const col = await getCollection();
-  const { webhook } = sessions[id];
-  await col.updateOne({ id }, { $set: { id, webhook } }, { upsert: true });
+  const { webhook, apiKey } = sessions[id];
+  await col.updateOne({ id }, { $set: { id, webhook, apiKey } }, { upsert: true });
 }
 
 async function removeRecord(id) {
@@ -29,8 +29,8 @@ async function removeRecord(id) {
 async function restoreSessions() {
   const col = await getCollection();
   const all = await col.find().toArray();
-  for (const { id, webhook } of all) {
-    try { await createSession(id, webhook); } catch {}
+  for (const { id, webhook, apiKey } of all) {
+    try { await createInstance(id, webhook, apiKey); } catch {}
   }
 }
 
@@ -40,24 +40,26 @@ function sendWebhookEvent(id, type, data) {
   fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId: id, type, data })
+    body: JSON.stringify({ instance: id, type, data })
   }).catch(() => {});
 }
 
-function initSessionRecord(id, sock, saveCreds, webhook) {
+function initSessionRecord(id, sock, saveCreds, webhook, apiKey) {
   sessions[id] = {
     sock,
     saveCreds,
     qr: null,
     status: 'connecting',
     webhook: webhook || null,
+    apiKey: apiKey || null,
     shouldReconnect: true
   };
 }
 
-async function createSession(id, webhook) {
+async function createInstance(id, webhook, apiKey) {
   if (sessions[id]) {
     if (webhook) sessions[id].webhook = webhook;
+    if (apiKey) sessions[id].apiKey = apiKey;
     return sessions[id].sock;
   }
 
@@ -66,7 +68,7 @@ async function createSession(id, webhook) {
   const sock = makeWASocket({ auth: state });
   await useMongoStore(id, sock);
 
-  initSessionRecord(id, sock, saveCreds, webhook);
+  initSessionRecord(id, sock, saveCreds, webhook, apiKey);
   await saveRecord(id);
 
   sock.ev.on('creds.update', saveCreds);
@@ -88,7 +90,7 @@ async function createSession(id, webhook) {
         delete session.needsRestart;
       } else if (session.wasQr) {
         session.needsRestart = true;
-        setTimeout(() => restartSession(id), 500);
+        setTimeout(() => restartInstance(id), 500);
       }
       session.wasQr = false;
     }
@@ -99,47 +101,59 @@ async function createSession(id, webhook) {
       if (statusCode === DisconnectReason.loggedOut) {
         delete sessions[id];
       } else if (session.shouldReconnect) {
-        createSession(id);
+        createInstance(id);
       } else {
         delete sessions[id];
       }
     }
   });
-  sock.ev.on('messages.upsert', (m) => sendWebhookEvent(id, 'messages', m));
+  sock.ev.process(async (events) => {
+    for (const [event, data] of Object.entries(events)) {
+      if (event === 'messages.update') {
+        data.forEach(u => {
+          if (u.update?.pollUpdates) {
+            sendWebhookEvent(id, 'poll.update', u);
+          }
+        });
+      }
+      sendWebhookEvent(id, event, data);
+    }
+  });
 
   return sock;
 }
 
-function getSession(id) {
+function getInstance(id) {
   return sessions[id]?.sock;
 }
 
-function getSessionStatus(id) {
+function getInstanceStatus(id) {
   return sessions[id]?.status || 'closed';
 }
 
-function getSessionQR(id) {
+function getInstanceQR(id) {
   return sessions[id]?.qr || null;
 }
 
-async function restartSession(id) {
+async function restartInstance(id) {
   const existing = sessions[id];
   if (existing) {
     existing.shouldReconnect = false;
     try { existing.sock.ws.close(); } catch {}
     delete sessions[id];
   }
-  return createSession(id, existing?.webhook);
+  return createInstance(id, existing?.webhook, existing?.apiKey);
 }
 
-function updateSession(id, details) {
+function updateInstance(id, details) {
   if (!sessions[id]) return null;
   if (details.webhook !== undefined) sessions[id].webhook = details.webhook;
+  if (details.apiKey !== undefined) sessions[id].apiKey = details.apiKey;
   saveRecord(id).catch(() => {});
   return sessions[id];
 }
 
-async function deleteSession(id) {
+async function deleteInstance(id) {
   const existing = sessions[id];
   if (existing) {
     existing.shouldReconnect = false;
@@ -151,7 +165,7 @@ async function deleteSession(id) {
   await col.deleteOne({ id });
 }
 
-async function listSessions() {
+async function listInstances() {
   const col = await getCollection();
   const records = await col.find().toArray();
   return records.map((r) => ({
@@ -160,14 +174,20 @@ async function listSessions() {
   }));
 }
 
+async function getInstanceRecord(id) {
+  const col = await getCollection();
+  return col.findOne({ id });
+}
+
 module.exports = {
-  createSession,
-  getSession,
-  getSessionStatus,
-  getSessionQR,
-  restartSession,
-  updateSession,
-  deleteSession,
-  listSessions,
-  restoreSessions
+  createInstance,
+  getInstance,
+  getInstanceStatus,
+  getInstanceQR,
+  restartInstance,
+  updateInstance,
+  deleteInstance,
+  listInstances,
+  restoreInstances,
+  getRecord: getInstanceRecord
 };

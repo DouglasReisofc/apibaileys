@@ -9,7 +9,7 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
-  <h1 class="mb-4">Baileys Multi Session</h1>
+  <h1 class="mb-4">Baileys Multi Instance</h1>
   <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" id="dash-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">Dashboard</button>
@@ -21,8 +21,10 @@
   <div class="tab-content">
   <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
   <div class="mb-3">
-    <select id="sessionSelect" class="form-select mb-2"></select>
-    <input id="sessionId" class="form-control mb-2" placeholder="Session ID" />
+    <input id="globalKey" class="form-control mb-2" placeholder="Global API Key" />
+    <select id="instanceSelect" class="form-select mb-2"></select>
+    <input id="instanceId" class="form-control mb-2" placeholder="Instance name" />
+    <input id="instanceKey" class="form-control mb-2" placeholder="Instance Key" />
     <input id="webhook" class="form-control" placeholder="Webhook URL" />
     <div class="mt-2">
       <button id="createBtn" class="btn btn-primary">Create/Update</button>
@@ -64,12 +66,12 @@ function log(obj) {
   document.getElementById('log').textContent = JSON.stringify(obj, null, 2);
 }
 async function loadSessions() {
-  const res = await fetch('/api/sessions');
+  const res = await fetch('/api/instances', { headers: {'x-api-key': document.getElementById('globalKey').value} });
   const data = await res.json();
-  const sel = document.getElementById('sessionSelect');
+  const sel = document.getElementById('instanceSelect');
   const prev = sel.value;
   sel.innerHTML = '';
-  data.sessions.forEach(s => {
+  data.instances.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
     opt.textContent = `${s.id} (${s.status})`;
@@ -78,43 +80,51 @@ async function loadSessions() {
   if (prev) {
     sel.value = prev;
   }
-  if (!sel.value && data.sessions.length) {
-    sel.value = data.sessions[0].id;
+  if (!sel.value && data.instances.length) {
+    sel.value = data.instances[0].id;
   }
   if (sel.value) startPolling(sel.value);
 }
 
 async function createSession() {
-  const id = document.getElementById('sessionId').value;
+  const id = document.getElementById('instanceId').value;
   const webhook = document.getElementById('webhook').value;
-  const res = await fetch('/api/session', {
+  const apiKey = document.getElementById('instanceKey').value;
+  const res = await fetch('/api/instance', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({id, webhook})
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': document.getElementById('globalKey').value
+    },
+    body: JSON.stringify({name: id, webhook, apiKey})
   });
   const data = await res.json();
   log(data);
   await loadSessions();
-  document.getElementById('sessionSelect').value = id;
+  document.getElementById('instanceSelect').value = id;
   startPolling(id);
 }
 async function sendMessage() {
-  const sessionId = document.getElementById('sessionSelect').value;
+  const sessionId = document.getElementById('instanceSelect').value;
   const number = document.getElementById('number').value;
   const message = document.getElementById('message').value;
   const ghost = document.getElementById('ghostCheck').checked;
   const quotedId = document.getElementById('replyId').value;
   const res = await fetch('/api/message', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({sessionId, number, message, ghost, quotedId})
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    },
+    body: JSON.stringify({instance: sessionId, number, message, ghost, quotedId})
   });
   const data = await res.json();
   log(data);
 }
 
 async function sendMedia() {
-  const sessionId = document.getElementById('sessionSelect').value;
+  const sessionId = document.getElementById('instanceSelect').value;
   const number = document.getElementById('number').value;
   const ghost = document.getElementById('ghostCheck').checked;
   const quotedId = document.getElementById('replyId').value;
@@ -129,9 +139,13 @@ async function sendMedia() {
   const media = await toBase64(file);
   const res = await fetch('/api/message/media', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    },
     body: JSON.stringify({
-      sessionId,
+      instance: sessionId,
       number,
       caption: document.getElementById('message').value,
       mimetype: file.type,
@@ -145,44 +159,64 @@ async function sendMedia() {
 }
 
 async function sendPoll() {
-  const sessionId = document.getElementById('sessionSelect').value;
+  const sessionId = document.getElementById('instanceSelect').value;
   const number = document.getElementById('number').value;
   const question = document.getElementById('pollQuestion').value;
   const options = document.getElementById('pollOptions').value.split(',').map(s => s.trim()).filter(Boolean);
   if (!question || !options.length) return alert('Question and options required');
   const res = await fetch('/api/message/poll', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ sessionId, number, question, options })
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    },
+    body: JSON.stringify({ instance: sessionId, number, question, options })
   });
   const data = await res.json();
   log(data);
 }
 
 async function deleteMessage() {
-  const sessionId = document.getElementById('sessionSelect').value;
+  const sessionId = document.getElementById('instanceSelect').value;
   const number = document.getElementById('number').value;
   const messageId = document.getElementById('deleteMsgId').value;
   const res = await fetch('/api/message/delete', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ sessionId, number, messageId })
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    },
+    body: JSON.stringify({ instance: sessionId, number, messageId })
   });
   const data = await res.json();
   log(data);
 }
 
 async function restart() {
-  const id = document.getElementById('sessionSelect').value;
-  const res = await fetch(`/api/session/${id}/reconnect`, { method: 'POST' });
+  const id = document.getElementById('instanceSelect').value;
+  const res = await fetch(`/api/instance/${id}/reconnect`, {
+    method: 'POST',
+    headers: {
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    }
+  });
   const data = await res.json();
   log(data);
   startPolling(id);
 }
 
 async function deleteCurrent() {
-  const id = document.getElementById('sessionSelect').value;
-  const res = await fetch(`/api/session/${id}`, { method: 'DELETE' });
+  const id = document.getElementById('instanceSelect').value;
+  const res = await fetch(`/api/instance/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    }
+  });
   const data = await res.json();
   log(data);
   loadSessions();
@@ -195,11 +229,21 @@ function startPolling(id) {
 }
 
 async function fetchStatus(id) {
-  const res = await fetch(`/api/session/${id}/status`);
+  const res = await fetch(`/api/instance/${id}/status`, {
+    headers: {
+      'x-api-key': document.getElementById('globalKey').value,
+      'x-instance-key': document.getElementById('instanceKey').value
+    }
+  });
   const { status } = await res.json();
   document.getElementById('status').textContent = `Status: ${status}`;
   if (status === 'qr') {
-    const qrRes = await fetch(`/api/session/${id}/qr`);
+    const qrRes = await fetch(`/api/instance/${id}/qr`, {
+      headers: {
+        'x-api-key': document.getElementById('globalKey').value,
+        'x-instance-key': document.getElementById('instanceKey').value
+      }
+    });
     if (qrRes.ok) {
       const { qr } = await qrRes.json();
       QRCode.toCanvas(document.getElementById('qrCanvas'), qr);
@@ -218,7 +262,7 @@ document.getElementById('deleteBtn').addEventListener('click', deleteCurrent);
 document.getElementById('sendMediaBtn').addEventListener('click', sendMedia);
 document.getElementById('sendPollBtn').addEventListener('click', sendPoll);
 document.getElementById('deleteMsgBtn').addEventListener('click', deleteMessage);
-document.getElementById('sessionSelect').addEventListener('change', (e) => {
+document.getElementById('instanceSelect').addEventListener('change', (e) => {
   if (e.target.value) startPolling(e.target.value);
 });
 document.getElementById('docs-tab').addEventListener('shown.bs.tab', loadDocs);

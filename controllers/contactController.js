@@ -1,4 +1,4 @@
-const { getSession } = require('../sessions/sessionManager');
+const { getInstance } = require('../sessions/sessionManager');
 
 function jid(id) {
   return id.includes('@') ? id : `${id}@s.whatsapp.net`;
@@ -6,9 +6,9 @@ function jid(id) {
 
 async function fetchStatus(req, res) {
   const { id } = req.params;
-  const { sessionId } = req.query;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance } = req.query;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const data = await session.fetchStatus(jid(id));
     res.json(data);
@@ -19,9 +19,9 @@ async function fetchStatus(req, res) {
 
 async function block(req, res) {
   const { id } = req.params;
-  const { sessionId } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     await session.updateBlockStatus(jid(id), 'block');
     res.json({ status: 'blocked' });
@@ -32,9 +32,9 @@ async function block(req, res) {
 
 async function unblock(req, res) {
   const { id } = req.params;
-  const { sessionId } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     await session.updateBlockStatus(jid(id), 'unblock');
     res.json({ status: 'unblocked' });

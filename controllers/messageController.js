@@ -1,4 +1,4 @@
-const { getSession } = require('../sessions/sessionManager');
+const { getInstance } = require('../sessions/sessionManager');
 
 function buildQuoted(jid, quotedId) {
   if (!quotedId) return undefined;
@@ -9,10 +9,10 @@ function buildQuoted(jid, quotedId) {
 }
 
 async function sendMessage(req, res) {
-  const { sessionId, number, message, ghost = false, quotedId } = req.body;
-  const session = getSession(sessionId);
+  const { instance, number, message, ghost = false, quotedId } = req.body;
+  const session = getInstance(instance);
   if (!session) {
-    return res.status(404).json({ error: 'Session not found' });
+    return res.status(404).json({ error: 'Instance not found' });
   }
   try {
     const jid = `${number}@s.whatsapp.net`;
@@ -28,9 +28,9 @@ async function sendMessage(req, res) {
 }
 
 async function sendMedia(req, res) {
-  const { sessionId, number, caption = '', media, mimetype, ghost = false, quotedId } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance, number, caption = '', media, mimetype, ghost = false, quotedId } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   if (!media || !mimetype) return res.status(400).json({ error: 'media and mimetype required' });
   try {
     const buffer = Buffer.from(media, 'base64');
@@ -51,9 +51,9 @@ async function sendMedia(req, res) {
 }
 
 async function deleteMessage(req, res) {
-  const { sessionId, number, messageId } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance, number, messageId } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const jid = `${number}@s.whatsapp.net`;
     await session.sendMessage(jid, {
@@ -66,9 +66,9 @@ async function deleteMessage(req, res) {
 }
 
 async function sendPoll(req, res) {
-  const { sessionId, number, question, options = [], multiple = false } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance, number, question, options = [], multiple = false } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const jid = `${number}@s.whatsapp.net`;
     await session.sendMessage(jid, {

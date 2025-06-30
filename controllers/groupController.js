@@ -1,4 +1,4 @@
-const { getSession } = require('../sessions/sessionManager');
+const { getInstance } = require('../sessions/sessionManager');
 
 function jid(id) {
   return id.includes('@') ? id : `${id}@s.whatsapp.net`;
@@ -9,9 +9,9 @@ function toJids(ids = []) {
 }
 
 async function createGroup(req, res) {
-  const { sessionId, subject, participants = [] } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance, subject, participants = [] } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const result = await session.groupCreate(subject, toJids(participants));
     res.json(result);
@@ -22,9 +22,9 @@ async function createGroup(req, res) {
 
 async function updateSubject(req, res) {
   const { id } = req.params;
-  const { sessionId, subject } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance, subject } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     await session.groupUpdateSubject(jid(id), subject);
     res.json({ status: 'ok' });
@@ -35,9 +35,9 @@ async function updateSubject(req, res) {
 
 async function participantsAction(req, res, action) {
   const { id } = req.params;
-  const { sessionId, participants = [] } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance, participants = [] } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     await session.groupParticipantsUpdate(jid(id), toJids(participants), action);
     res.json({ status: 'ok' });
@@ -64,9 +64,9 @@ async function demoteParticipants(req, res) {
 
 async function leaveGroup(req, res) {
   const { id } = req.params;
-  const { sessionId } = req.body;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance } = req.body;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     await session.groupLeave(jid(id));
     res.json({ status: 'left' });
@@ -77,9 +77,9 @@ async function leaveGroup(req, res) {
 
 async function fetchMetadata(req, res) {
   const { id } = req.params;
-  const { sessionId } = req.query;
-  const session = getSession(sessionId);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const { instance } = req.query;
+  const session = getInstance(instance);
+  if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const data = await session.groupMetadata(jid(id));
     res.json(data);

@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const routes = require('./routes');
-const { restoreSessions } = require('./sessions/sessionManager');
+const { restoreInstances } = require('./sessions/sessionManager');
 const { initDb } = require('./db');
 
 const app = express();
@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 initDb()
   .then(() => {
     console.log('MongoDB connected');
-    return restoreSessions();
+    return restoreInstances();
   })
   .then(() => {
     app.listen(PORT, () => {
