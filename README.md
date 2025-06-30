@@ -50,6 +50,10 @@ node index.js
 
 Acesse `http://localhost:3000` para visualizar o painel.
 
+O painel possui uma aba **Docs** que carrega este README automaticamente.
+As sessões disponíveis são atualizadas a cada 5 segundos, facilitando a seleção
+de instâncias ativas.
+
 ### Endpoints principais
 
 - `GET /api/sessions` – lista sessões ativas.
