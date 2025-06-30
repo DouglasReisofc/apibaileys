@@ -91,10 +91,10 @@ async function createSession(id, webhook) {
       sessions[id].status = 'closed';
       sendWebhookEvent(id, 'close', {});
       const statusCode = lastDisconnect?.error?.output?.statusCode;
-      if (statusCode && statusCode !== DisconnectReason.loggedOut) {
-        createSession(id);
-      } else {
+      if (statusCode === DisconnectReason.loggedOut) {
         delete sessions[id];
+      } else {
+        createSession(id);
       }
     }
   });

@@ -1,9 +1,17 @@
 const { initAuthCreds } = require('@whiskeysockets/baileys');
 const { getSessionCollection } = require('../db');
 
+function toBuffer(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (obj._bsontype === 'Binary') return obj.buffer;
+  for (const k in obj) obj[k] = toBuffer(obj[k]);
+  return obj;
+}
+
 async function useMongoAuthState(id) {
   const col = await getSessionCollection();
   let record = await col.findOne({ id }) || {};
+  record = toBuffer(record);
   let creds = record.creds || initAuthCreds();
   let keys = record.keys || {};
 
