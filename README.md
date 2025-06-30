@@ -9,7 +9,7 @@ TypeScript (opcional, mas recomendado)
 
 Yarn ou NPM
 
-MongoDB em `mongodb://localhost:27017` (para armazenar sessões, altere usando a variável `MONGO_URI`)
+MongoDB em `mongodb://localhost:27017/baileys` (para armazenar sessões, altere usando a variável `MONGO_URI`)
 
 Redis (opcional, para filas/eventos em tempo real)
 
@@ -51,7 +51,7 @@ node index.js
 Acesse `http://localhost:3000` para visualizar o painel.
 
 O painel possui uma aba **Docs** que carrega este README automaticamente.
-As sessoes disponiveis sao atualizadas a cada 5 segundos, facilitando a selecao de instancias ativas. Todas elas ficam salvas em MongoDB e sao restauradas quando o servidor inicia.
+As sessoes disponiveis sao atualizadas a cada 5 segundos, facilitando a selecao de instancias ativas. Todas elas ficam salvas em MongoDB e sao restauradas quando o servidor inicia. O servidor testa a conexao com o banco ao iniciar e encerra caso nao consiga se conectar.
 
 ### Endpoints principais
 

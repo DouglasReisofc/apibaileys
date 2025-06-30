@@ -1,15 +1,14 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
-const { useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const { MongoClient } = require('mongodb');
+const { DisconnectReason } = require('@whiskeysockets/baileys');
+const { initDb } = require('../db');
+const { useMongoAuthState } = require('./mongoAuthState');
 
-const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017';
-const client = new MongoClient(mongoUri);
 let collection;
 
-async function initDb() {
+async function getCollection() {
   if (!collection) {
-    await client.connect();
-    collection = client.db('apibaileys').collection('sessions');
+    const db = await initDb();
+    collection = db.collection('sessions');
   }
   return collection;
 }
@@ -17,18 +16,18 @@ async function initDb() {
 const sessions = {};
 
 async function saveRecord(id) {
-  const col = await initDb();
+  const col = await getCollection();
   const { webhook } = sessions[id];
   await col.updateOne({ id }, { $set: { id, webhook } }, { upsert: true });
 }
 
 async function removeRecord(id) {
-  const col = await initDb();
+  const col = await getCollection();
   await col.deleteOne({ id });
 }
 
 async function restoreSessions() {
-  const col = await initDb();
+  const col = await getCollection();
   const all = await col.find().toArray();
   for (const { id, webhook } of all) {
     try { await createSession(id, webhook); } catch {}
@@ -61,7 +60,8 @@ async function createSession(id, webhook) {
     return sessions[id].sock;
   }
 
-  const { state, saveCreds } = await useMultiFileAuthState(`session-${id}`);
+  const { state, saveCreds, setWebhook } = await useMongoAuthState(id);
+  if (webhook) await setWebhook(webhook);
   const sock = makeWASocket({ auth: state });
 
   initSessionRecord(id, sock, saveCreds, webhook);

@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const routes = require('./routes');
 const { restoreSessions } = require('./sessions/sessionManager');
+const { initDb } = require('./db');
 
 const app = express();
 app.use(cors());
@@ -14,11 +15,17 @@ app.get('/README.md', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-restoreSessions().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+initDb()
+  .then(() => {
+    console.log('MongoDB connected');
+    return restoreSessions();
+  })
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to start server', err);
+    process.exit(1);
   });
-}).catch(err => {
-  console.error('Failed to restore sessions', err);
-  process.exit(1);
-});
