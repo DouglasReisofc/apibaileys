@@ -65,4 +65,19 @@ async function deleteMessage(req, res) {
   }
 }
 
-module.exports = { sendMessage, sendMedia, deleteMessage };
+async function sendPoll(req, res) {
+  const { sessionId, number, question, options = [], multiple = false } = req.body;
+  const session = getSession(sessionId);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+  try {
+    const jid = `${number}@s.whatsapp.net`;
+    await session.sendMessage(jid, {
+      poll: { name: question, values: options, selectableCount: multiple ? options.length : 1 }
+    });
+    res.json({ status: 'poll sent' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+module.exports = { sendMessage, sendMedia, deleteMessage, sendPoll };

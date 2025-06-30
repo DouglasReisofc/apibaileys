@@ -9,7 +9,7 @@ TypeScript (opcional, mas recomendado)
 
 Yarn ou NPM
 
-MongoDB em `mongodb://localhost:27017/baileys` (para armazenar sessões, altere usando a variável `MONGO_URI`)
+MongoDB em `mongodb://localhost:27017/baileys` (para armazenar sessões e o store de mensagens, altere usando a variável `MONGO_URI`)
 
 Redis (opcional, para filas/eventos em tempo real)
 
@@ -51,7 +51,7 @@ node index.js
 Acesse `http://localhost:3000` para visualizar o painel.
 
 O painel possui uma aba **Docs** que carrega este README automaticamente.
-As sessoes disponiveis sao atualizadas a cada 5 segundos, facilitando a selecao de instancias ativas. Todas elas ficam salvas em MongoDB e sao restauradas quando o servidor inicia. O servidor testa a conexao com o banco ao iniciar e encerra caso nao consiga se conectar.
+As sessoes disponiveis sao atualizadas a cada 5 segundos, facilitando a selecao de instancias ativas. Todas elas ficam salvas em MongoDB e sao restauradas quando o servidor inicia. O store de mensagens tambem eh persistido no banco, permitindo descriptografar mensagens e enquetes. O servidor testa a conexao com o banco ao iniciar e encerra caso nao consiga se conectar.
 
 ### Endpoints principais
 
@@ -64,6 +64,7 @@ As sessoes disponiveis sao atualizadas a cada 5 segundos, facilitando a selecao 
 - `GET /api/session/:id/qr` – obtém o QR code para autenticação.
 - `POST /api/message` – envia texto `{ sessionId, number, message, ghost?, quotedId? }`.
 - `POST /api/message/media` – envia mídia base64 `{ sessionId, number, mimetype, media, caption?, ghost?, quotedId? }`.
+- `POST /api/message/poll` – envia enquetes `{ sessionId, number, question, options[], multiple? }`.
 - `POST /api/message/delete` – remove uma mensagem `{ sessionId, number, messageId }`.
 
 #### Ações de Grupos

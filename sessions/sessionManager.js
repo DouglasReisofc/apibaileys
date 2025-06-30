@@ -1,7 +1,8 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const { DisconnectReason } = require('@whiskeysockets/baileys');
-const { getSessionCollection } = require('../db');
+const { getSessionCollection, getStoreCollection } = require('../db');
 const { useMongoAuthState } = require('./mongoAuthState');
+const { useMongoStore } = require('./mongoStore');
 
 let collection;
 
@@ -63,6 +64,7 @@ async function createSession(id, webhook) {
   const { state, saveCreds, setWebhook } = await useMongoAuthState(id);
   if (webhook) await setWebhook(webhook);
   const sock = makeWASocket({ auth: state });
+  await useMongoStore(id, sock);
 
   initSessionRecord(id, sock, saveCreds, webhook);
   await saveRecord(id);
@@ -145,6 +147,8 @@ async function deleteSession(id) {
     delete sessions[id];
   }
   await removeRecord(id);
+  const col = await getStoreCollection();
+  await col.deleteOne({ id });
 }
 
 async function listSessions() {

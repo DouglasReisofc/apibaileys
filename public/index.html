@@ -44,6 +44,9 @@
     <input type="file" id="mediaFile" class="form-control mt-2" />
     <button id="sendBtn" class="btn btn-success mt-2">Send Text</button>
     <button id="sendMediaBtn" class="btn btn-secondary mt-2 ms-2">Send Media</button>
+    <input id="pollQuestion" class="form-control mt-2" placeholder="Poll question" />
+    <input id="pollOptions" class="form-control mt-2" placeholder="Options (comma separated)" />
+    <button id="sendPollBtn" class="btn btn-secondary mt-2">Send Poll</button>
     <input id="deleteMsgId" class="form-control mt-2" placeholder="Delete message ID" />
     <button id="deleteMsgBtn" class="btn btn-danger mt-2">Delete Msg</button>
   </div>
@@ -141,6 +144,21 @@ async function sendMedia() {
   log(data);
 }
 
+async function sendPoll() {
+  const sessionId = document.getElementById('sessionSelect').value;
+  const number = document.getElementById('number').value;
+  const question = document.getElementById('pollQuestion').value;
+  const options = document.getElementById('pollOptions').value.split(',').map(s => s.trim()).filter(Boolean);
+  if (!question || !options.length) return alert('Question and options required');
+  const res = await fetch('/api/message/poll', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ sessionId, number, question, options })
+  });
+  const data = await res.json();
+  log(data);
+}
+
 async function deleteMessage() {
   const sessionId = document.getElementById('sessionSelect').value;
   const number = document.getElementById('number').value;
@@ -198,6 +216,7 @@ document.getElementById('sendBtn').addEventListener('click', sendMessage);
 document.getElementById('restartBtn').addEventListener('click', restart);
 document.getElementById('deleteBtn').addEventListener('click', deleteCurrent);
 document.getElementById('sendMediaBtn').addEventListener('click', sendMedia);
+document.getElementById('sendPollBtn').addEventListener('click', sendPoll);
 document.getElementById('deleteMsgBtn').addEventListener('click', deleteMessage);
 document.getElementById('sessionSelect').addEventListener('change', (e) => {
   if (e.target.value) startPolling(e.target.value);

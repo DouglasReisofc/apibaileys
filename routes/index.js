@@ -9,7 +9,7 @@ const {
   deleteSession,
   listSessions
 } = require('../sessions/sessionManager');
-const { sendMessage, sendMedia, deleteMessage } = require('../controllers/messageController');
+const { sendMessage, sendMedia, deleteMessage, sendPoll } = require('../controllers/messageController');
 const {
   createGroup,
   updateSubject,
@@ -89,6 +89,7 @@ router.delete('/session/:id', async (req, res) => {
 
 router.post('/message', sendMessage);
 router.post('/message/media', sendMedia);
+router.post('/message/poll', sendPoll);
 router.post('/message/delete', deleteMessage);
 
 // Group endpoints

@@ -17,4 +17,9 @@ async function getSessionCollection() {
   return database.collection('sessions');
 }
 
-module.exports = { initDb, getSessionCollection };
+async function getStoreCollection() {
+  const database = await initDb();
+  return database.collection('stores');
+}
+
+module.exports = { initDb, getSessionCollection, getStoreCollection };
