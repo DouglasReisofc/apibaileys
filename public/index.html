@@ -20,37 +20,80 @@
   </ul>
   <div class="tab-content">
   <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
-  <div class="mb-3">
-    <input id="globalKey" class="form-control mb-2" placeholder="Global API Key" />
-    <select id="instanceSelect" class="form-select mb-2"></select>
-    <input id="instanceId" class="form-control mb-2" placeholder="Instance name" />
-    <input id="instanceKey" class="form-control mb-2" placeholder="Instance Key" />
-    <input id="webhook" class="form-control" placeholder="Webhook URL" />
-    <div class="mt-2">
-      <button id="createBtn" class="btn btn-primary">Create/Update</button>
-      <button id="restartBtn" class="btn btn-warning ms-2">Reconnect</button>
-      <button id="deleteBtn" class="btn btn-danger ms-2">Delete</button>
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <input id="globalKey" class="form-control" placeholder="Global API Key" />
+    </div>
+    <div class="col-md-4">
+      <select id="instanceSelect" class="form-select"></select>
+    </div>
+    <div class="col-md-4 text-md-end">
+      <button id="restartBtn" class="btn btn-warning me-2">Reconnect</button>
+      <button id="deleteBtn" class="btn btn-danger">Delete</button>
     </div>
   </div>
 
-  <div class="mb-3">
+  <div class="card mb-3 p-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <input id="instanceId" class="form-control" placeholder="Instance name" />
+      </div>
+      <div class="col-md-4">
+        <input id="instanceKey" class="form-control" placeholder="Instance Key" />
+      </div>
+      <div class="col-md-4">
+        <input id="webhook" class="form-control" placeholder="Webhook URL" />
+      </div>
+    </div>
+    <div class="mt-3 text-end">
+      <button id="createBtn" class="btn btn-primary">Create/Update</button>
+    </div>
+  </div>
+
+  <div class="card p-3 mb-3">
     <div id="status" class="mb-2 fw-bold"></div>
     <canvas id="qrCanvas" class="mb-3"></canvas>
-    <input id="number" class="form-control" placeholder="Number" />
-    <textarea id="message" class="form-control mt-2" placeholder="Message"></textarea>
-    <div class="form-check mt-2">
+    <div class="row g-2 mb-2">
+      <div class="col-md-6">
+        <input id="number" class="form-control" placeholder="Number" />
+      </div>
+      <div class="col-md-6">
+        <input id="replyId" class="form-control" placeholder="Reply message ID" />
+      </div>
+    </div>
+    <textarea id="message" class="form-control mb-2" placeholder="Message"></textarea>
+    <div class="form-check mb-2">
       <input class="form-check-input" type="checkbox" id="ghostCheck">
       <label class="form-check-label" for="ghostCheck">Ghost mention</label>
     </div>
-    <input id="replyId" class="form-control mt-2" placeholder="Reply message ID" />
-    <input type="file" id="mediaFile" class="form-control mt-2" />
-    <button id="sendBtn" class="btn btn-success mt-2">Send Text</button>
-    <button id="sendMediaBtn" class="btn btn-secondary mt-2 ms-2">Send Media</button>
-    <input id="pollQuestion" class="form-control mt-2" placeholder="Poll question" />
-    <input id="pollOptions" class="form-control mt-2" placeholder="Options (comma separated)" />
-    <button id="sendPollBtn" class="btn btn-secondary mt-2">Send Poll</button>
-    <input id="deleteMsgId" class="form-control mt-2" placeholder="Delete message ID" />
-    <button id="deleteMsgBtn" class="btn btn-danger mt-2">Delete Msg</button>
+    <input type="file" id="mediaFile" class="form-control mb-2" />
+    <div class="row g-2">
+      <div class="col-auto">
+        <button id="sendBtn" class="btn btn-success">Send Text</button>
+      </div>
+      <div class="col-auto">
+        <button id="sendMediaBtn" class="btn btn-secondary">Send Media</button>
+      </div>
+    </div>
+    <div class="row g-2 mt-2">
+      <div class="col-md-6">
+        <input id="pollQuestion" class="form-control" placeholder="Poll question" />
+      </div>
+      <div class="col-md-6">
+        <input id="pollOptions" class="form-control" placeholder="Options (comma separated)" />
+      </div>
+    </div>
+    <div class="mt-2">
+      <button id="sendPollBtn" class="btn btn-secondary">Send Poll</button>
+    </div>
+    <div class="row g-2 mt-3 align-items-end">
+      <div class="col-md-6">
+        <input id="deleteMsgId" class="form-control" placeholder="Delete message ID" />
+      </div>
+      <div class="col-auto">
+        <button id="deleteMsgBtn" class="btn btn-danger">Delete Msg</button>
+      </div>
+    </div>
   </div>
   <pre id="log" class="bg-white p-2"></pre>
 </div>
@@ -65,12 +108,37 @@ let poll;
 function log(obj) {
   document.getElementById('log').textContent = JSON.stringify(obj, null, 2);
 }
+const globalInput = document.getElementById('globalKey');
+const instanceKeyInput = document.getElementById('instanceKey');
+const selectInput = document.getElementById('instanceSelect');
+
+globalInput.value = localStorage.getItem('globalKey') || '';
+instanceKeyInput.value = localStorage.getItem('instanceKey') || '';
+selectInput.value = localStorage.getItem('instanceSelect') || '';
+
+globalInput.addEventListener('input', () => {
+  localStorage.setItem('globalKey', globalInput.value);
+});
+instanceKeyInput.addEventListener('input', () => {
+  localStorage.setItem('instanceKey', instanceKeyInput.value);
+});
+selectInput.addEventListener('change', e => {
+  localStorage.setItem('instanceSelect', e.target.value);
+  if (e.target.value) startPolling(e.target.value);
+});
 async function loadSessions() {
-  const res = await fetch('/api/instances', { headers: {'x-api-key': document.getElementById('globalKey').value} });
-  const data = await res.json();
+  const res = await fetch('/api/instances', {
+    headers: { 'x-api-key': globalInput.value }
+  });
+  let data;
+  try { data = await res.json(); } catch { data = {}; }
   const sel = document.getElementById('instanceSelect');
-  const prev = sel.value;
+  const prev = sel.value || selectInput.value;
   sel.innerHTML = '';
+  if (!data.instances) {
+    log(data);
+    return;
+  }
   data.instances.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
@@ -89,19 +157,20 @@ async function loadSessions() {
 async function createSession() {
   const id = document.getElementById('instanceId').value;
   const webhook = document.getElementById('webhook').value;
-  const apiKey = document.getElementById('instanceKey').value;
+  const apiKey = instanceKeyInput.value;
   const res = await fetch('/api/instance', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': document.getElementById('globalKey').value
+      'x-api-key': globalInput.value
     },
     body: JSON.stringify({name: id, webhook, apiKey})
   });
   const data = await res.json();
   log(data);
   await loadSessions();
-  document.getElementById('instanceSelect').value = id;
+  selectInput.value = id;
+  localStorage.setItem('instanceSelect', id);
   startPolling(id);
 }
 async function sendMessage() {
@@ -114,8 +183,8 @@ async function sendMessage() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     },
     body: JSON.stringify({instance: sessionId, number, message, ghost, quotedId})
   });
@@ -141,8 +210,8 @@ async function sendMedia() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     },
     body: JSON.stringify({
       instance: sessionId,
@@ -168,8 +237,8 @@ async function sendPoll() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     },
     body: JSON.stringify({ instance: sessionId, number, question, options })
   });
@@ -185,8 +254,8 @@ async function deleteMessage() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     },
     body: JSON.stringify({ instance: sessionId, number, messageId })
   });
@@ -199,8 +268,8 @@ async function restart() {
   const res = await fetch(`/api/instance/${id}/reconnect`, {
     method: 'POST',
     headers: {
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     }
   });
   const data = await res.json();
@@ -213,8 +282,8 @@ async function deleteCurrent() {
   const res = await fetch(`/api/instance/${id}`, {
     method: 'DELETE',
     headers: {
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     }
   });
   const data = await res.json();
@@ -231,8 +300,8 @@ function startPolling(id) {
 async function fetchStatus(id) {
   const res = await fetch(`/api/instance/${id}/status`, {
     headers: {
-      'x-api-key': document.getElementById('globalKey').value,
-      'x-instance-key': document.getElementById('instanceKey').value
+      'x-api-key': globalInput.value,
+      'x-instance-key': instanceKeyInput.value
     }
   });
   const { status } = await res.json();
@@ -240,8 +309,8 @@ async function fetchStatus(id) {
   if (status === 'qr') {
     const qrRes = await fetch(`/api/instance/${id}/qr`, {
       headers: {
-        'x-api-key': document.getElementById('globalKey').value,
-        'x-instance-key': document.getElementById('instanceKey').value
+        'x-api-key': globalInput.value,
+        'x-instance-key': instanceKeyInput.value
       }
     });
     if (qrRes.ok) {
@@ -262,9 +331,6 @@ document.getElementById('deleteBtn').addEventListener('click', deleteCurrent);
 document.getElementById('sendMediaBtn').addEventListener('click', sendMedia);
 document.getElementById('sendPollBtn').addEventListener('click', sendPoll);
 document.getElementById('deleteMsgBtn').addEventListener('click', deleteMessage);
-document.getElementById('instanceSelect').addEventListener('change', (e) => {
-  if (e.target.value) startPolling(e.target.value);
-});
 document.getElementById('docs-tab').addEventListener('shown.bs.tab', loadDocs);
 async function loadDocs(){
   const res = await fetch('/README.md');
