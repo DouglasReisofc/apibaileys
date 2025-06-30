@@ -10,10 +10,13 @@
 <div class="container py-4">
   <h1 class="mb-4">Baileys Multi Session</h1>
   <div class="mb-3">
-    <input id="sessionId" class="form-control" placeholder="Session ID" />
+    <select id="sessionSelect" class="form-select mb-2"></select>
+    <input id="sessionId" class="form-control mb-2" placeholder="Session ID" />
+    <input id="webhook" class="form-control" placeholder="Webhook URL" />
     <div class="mt-2">
-      <button id="createBtn" class="btn btn-primary">Create Session</button>
-      <button id="restartBtn" class="btn btn-warning ms-2">Restart</button>
+      <button id="createBtn" class="btn btn-primary">Create/Update</button>
+      <button id="restartBtn" class="btn btn-warning ms-2">Reconnect</button>
+      <button id="deleteBtn" class="btn btn-danger ms-2">Delete</button>
     </div>
   </div>
 
@@ -32,19 +35,35 @@ let poll;
 function log(obj) {
   document.getElementById('log').textContent = JSON.stringify(obj, null, 2);
 }
+async function loadSessions() {
+  const res = await fetch('/api/sessions');
+  const data = await res.json();
+  const sel = document.getElementById('sessionSelect');
+  sel.innerHTML = '';
+  data.sessions.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.id} (${s.status})`;
+    sel.appendChild(opt);
+  });
+  if (sel.value) startPolling(sel.value);
+}
+
 async function createSession() {
   const id = document.getElementById('sessionId').value;
+  const webhook = document.getElementById('webhook').value;
   const res = await fetch('/api/session', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({id})
+    body: JSON.stringify({id, webhook})
   });
   const data = await res.json();
   log(data);
+  loadSessions();
   startPolling(id);
 }
 async function sendMessage() {
-  const sessionId = document.getElementById('sessionId').value;
+  const sessionId = document.getElementById('sessionSelect').value;
   const number = document.getElementById('number').value;
   const message = document.getElementById('message').value;
   const res = await fetch('/api/message', {
@@ -57,11 +76,19 @@ async function sendMessage() {
 }
 
 async function restart() {
-  const id = document.getElementById('sessionId').value;
-  const res = await fetch(`/api/session/${id}/restart`, { method: 'POST' });
+  const id = document.getElementById('sessionSelect').value;
+  const res = await fetch(`/api/session/${id}/reconnect`, { method: 'POST' });
   const data = await res.json();
   log(data);
   startPolling(id);
+}
+
+async function deleteCurrent() {
+  const id = document.getElementById('sessionSelect').value;
+  const res = await fetch(`/api/session/${id}`, { method: 'DELETE' });
+  const data = await res.json();
+  log(data);
+  loadSessions();
 }
 
 function startPolling(id) {
@@ -90,6 +117,11 @@ async function fetchStatus(id) {
 document.getElementById('createBtn').addEventListener('click', createSession);
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
 document.getElementById('restartBtn').addEventListener('click', restart);
+document.getElementById('deleteBtn').addEventListener('click', deleteCurrent);
+document.getElementById('sessionSelect').addEventListener('change', (e) => {
+  if (e.target.value) startPolling(e.target.value);
+});
+loadSessions();
 </script>
 </body>
 </html>

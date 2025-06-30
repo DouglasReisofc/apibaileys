@@ -51,8 +51,11 @@ Acesse `http://localhost:3000` para visualizar o painel.
 
 ### Endpoints principais
 
-- `POST /api/session` – cria uma nova sessão.
+- `GET /api/sessions` – lista sessões ativas.
+- `POST /api/session` – cria ou atualiza uma sessão `{ id, webhook }`.
+- `PUT /api/session/:id` – atualiza dados da sessão.
+- `DELETE /api/session/:id` – remove a sessão.
+- `POST /api/session/:id/reconnect` – reconecta a sessão.
 - `GET /api/session/:id/status` – retorna o status da sessão.
 - `GET /api/session/:id/qr` – obtém o QR code para autenticação.
-- `POST /api/session/:id/restart` – reinicia a sessão.
-- `POST /api/message` – envia uma mensagem.
+- `POST /api/message` – envia uma mensagem informando `sessionId`.
