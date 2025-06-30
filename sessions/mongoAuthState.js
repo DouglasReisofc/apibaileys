@@ -1,8 +1,8 @@
 const { initAuthCreds } = require('@whiskeysockets/baileys');
-const { initDb } = require('../db');
+const { getSessionCollection } = require('../db');
 
 async function useMongoAuthState(id) {
-  const col = await initDb();
+  const col = await getSessionCollection();
   let record = await col.findOne({ id }) || {};
   let creds = record.creds || initAuthCreds();
   let keys = record.keys || {};

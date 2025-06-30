@@ -12,4 +12,9 @@ async function initDb() {
   return db;
 }
 
-module.exports = { initDb };
+async function getSessionCollection() {
+  const database = await initDb();
+  return database.collection('sessions');
+}
+
+module.exports = { initDb, getSessionCollection };

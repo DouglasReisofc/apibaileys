@@ -1,14 +1,13 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const { DisconnectReason } = require('@whiskeysockets/baileys');
-const { initDb } = require('../db');
+const { getSessionCollection } = require('../db');
 const { useMongoAuthState } = require('./mongoAuthState');
 
 let collection;
 
 async function getCollection() {
   if (!collection) {
-    const db = await initDb();
-    collection = db.collection('sessions');
+    collection = await getSessionCollection();
   }
   return collection;
 }
