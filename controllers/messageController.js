@@ -82,13 +82,7 @@ async function sendPoll(req, res) {
     const sent = await session.sock.sendMessage(jid, {
       poll: { name: question, values: options, selectableCount: multiple ? options.length : 1 }
     });
-    let full = null;
-    try {
-      full = await session.sock.loadMessage(jid, sent.key.id);
-    } catch (err) {
-      log(`[sendPoll] loadMessage failed: ${err.message}`);
-    }
-    session.store.messages.insert(jid, [full || sent]);
+    session.store.messages.insert(jid, [sent]);
     if (session.write) await session.write();
     res.json({ status: 'poll sent' });
   } catch (e) {

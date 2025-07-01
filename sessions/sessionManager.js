@@ -66,18 +66,7 @@ async function handlePollVote(id, msg) {
     creationKey.remoteJid || msg.key.remoteJid,
     creationKey.id
   );
-  if (!pollMsg && session.sock.loadMessage) {
-    try {
-      pollMsg = await session.sock.loadMessage(
-        creationKey.remoteJid || msg.key.remoteJid,
-        creationKey.id
-      );
-      if (pollMsg) {
-        store.messages.insert(creationKey.remoteJid || msg.key.remoteJid, [pollMsg]);
-        session.write && session.write().catch(() => {});
-      }
-    } catch {}
-  }
+  // poll messages are stored when created; if missing, cannot decrypt
   if (!pollMsg) {
     console.log(
       `❌ [pollVote] Mensagem da enquete nao encontrada no store`
