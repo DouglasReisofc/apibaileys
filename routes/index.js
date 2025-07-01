@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const { log } = require('../utils/logger');
 const GLOBAL_KEY = process.env.GLOBAL_API_KEY || 'change-me';
 
 router.use((req, res, next) => {
   const key = req.headers['x-api-key'] || req.query.apiKey;
   if (key !== GLOBAL_KEY) return res.status(401).json({ error: 'Invalid api key' });
+  log(`[route] ${req.method} ${req.originalUrl}`);
   next();
 });
 

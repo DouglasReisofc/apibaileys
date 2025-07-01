@@ -1,4 +1,5 @@
 const { getStoreCollection } = require('../db');
+const { log } = require('../utils/logger');
 
 function toBuffer(obj) {
   if (!obj || typeof obj !== 'object') return obj;
@@ -81,13 +82,22 @@ async function useMongoStore(id, sock) {
   if (sock) bind(sock.ev);
 
   async function write() {
-    await col.updateOne({ id }, {
-      $set: {
-        id,
-        chats: store.chats.all(),
-        messages: Object.fromEntries(Object.entries(store.messages.messages).map(([k, v]) => [k, v.array]))
-      }
-    }, { upsert: true });
+    try {
+      await col.updateOne({ id }, {
+        $set: {
+          id,
+          chats: store.chats.all(),
+          messages: Object.fromEntries(
+            Object.entries(store.messages.messages).map(([k, v]) => [k, v.array])
+          )
+        }
+      }, { upsert: true });
+      const total = Object.values(store.messages.messages)
+        .reduce((s, v) => s + v.array.length, 0);
+      log(`[store] saved ${id} (chats ${store.chats.data.size}, messages ${total})`);
+    } catch (err) {
+      log(`[store] failed to save ${id}: ${err.message}`);
+    }
   }
 
   return { store, bind, write };

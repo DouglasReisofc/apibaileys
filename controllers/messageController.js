@@ -1,4 +1,5 @@
 const { getInstance, getSession } = require('../sessions/sessionManager');
+const { log } = require('../utils/logger');
 
 function buildQuoted(jid, quotedId) {
   if (!quotedId) return undefined;
@@ -15,6 +16,7 @@ async function sendMessage(req, res) {
     return res.status(404).json({ error: 'Instance not found' });
   }
   try {
+    log(`[sendMessage] ${instance} -> ${number}`);
     const jid = `${number}@s.whatsapp.net`;
     await session.sendMessage(
       jid,
@@ -23,6 +25,7 @@ async function sendMessage(req, res) {
     );
     res.json({ status: 'Message sent' });
   } catch (e) {
+    log(`[sendMessage] error: ${e.message}`);
     res.status(500).json({ error: e.message });
   }
 }
@@ -33,6 +36,7 @@ async function sendMedia(req, res) {
   if (!session) return res.status(404).json({ error: 'Instance not found' });
   if (!media || !mimetype) return res.status(400).json({ error: 'media and mimetype required' });
   try {
+    log(`[sendMedia] ${instance} -> ${number} (${mimetype})`);
     const buffer = Buffer.from(media, 'base64');
     const jid = `${number}@s.whatsapp.net`;
     const type = mimetype.startsWith('image/')
@@ -46,6 +50,7 @@ async function sendMedia(req, res) {
     await session.sendMessage(jid, content, { quoted: buildQuoted(jid, quotedId) });
     res.json({ status: 'Media sent' });
   } catch (e) {
+    log(`[sendMedia] error: ${e.message}`);
     res.status(500).json({ error: e.message });
   }
 }
@@ -55,12 +60,14 @@ async function deleteMessage(req, res) {
   const session = getInstance(instance);
   if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
+    log(`[deleteMessage] ${instance} -> ${number} ${messageId}`);
     const jid = `${number}@s.whatsapp.net`;
     await session.sendMessage(jid, {
       delete: { remoteJid: jid, fromMe: true, id: messageId }
     });
     res.json({ status: 'deleted' });
   } catch (e) {
+    log(`[deleteMessage] error: ${e.message}`);
     res.status(500).json({ error: e.message });
   }
 }
@@ -71,13 +78,21 @@ async function sendPoll(req, res) {
   if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const jid = `${number}@s.whatsapp.net`;
+    log(`[sendPoll] ${instance} -> ${number}`);
     const sent = await session.sock.sendMessage(jid, {
       poll: { name: question, values: options, selectableCount: multiple ? options.length : 1 }
     });
-    session.store.messages.insert(jid, [sent]);
+    let full = null;
+    try {
+      full = await session.sock.loadMessage(jid, sent.key.id);
+    } catch (err) {
+      log(`[sendPoll] loadMessage failed: ${err.message}`);
+    }
+    session.store.messages.insert(jid, [full || sent]);
     if (session.write) await session.write();
     res.json({ status: 'poll sent' });
   } catch (e) {
+    log(`[sendPoll] error: ${e.message}`);
     res.status(500).json({ error: e.message });
   }
 }
