@@ -67,8 +67,7 @@ async function useMongoStore(id, sock) {
   }
   if (record.messages) {
     for (const jid in record.messages) {
-      const messages = record.messages[jid].map(m => ({ key: m.key, message: m.message, messageTimestamp: m.messageTimestamp }));
-      store.messages.insert(jid, messages);
+      store.messages.insert(jid, record.messages[jid]);
     }
   }
 
