@@ -32,6 +32,9 @@
       <button id="deleteBtn" class="btn btn-danger">Delete</button>
     </div>
   </div>
+  <div class="card mb-3">
+    <ul id="sessionList" class="list-group list-group-flush"></ul>
+  </div>
 
   <div class="card mb-3 p-3">
     <div class="row g-2 align-items-end">
@@ -139,11 +142,17 @@ async function loadSessions() {
     log(data);
     return;
   }
+  const list = document.getElementById('sessionList');
+  list.innerHTML = '';
   data.instances.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
     opt.textContent = `${s.id} (${s.status})`;
     sel.appendChild(opt);
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.textContent = `${s.id} (${s.status})`;
+    list.appendChild(li);
   });
   if (prev) {
     sel.value = prev;

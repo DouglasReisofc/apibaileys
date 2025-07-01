@@ -10,6 +10,7 @@ TypeScript (opcional, mas recomendado)
 Yarn ou NPM
 
 Defina `GLOBAL_API_KEY` para proteger as rotas da API.
+Crie um arquivo `.env` definindo `GLOBAL_API_KEY`, `PORT` e `MONGO_URI`.
 
 MongoDB em `mongodb://localhost:27017/baileys` (para armazenar sessões e o store de mensagens, altere usando a variável `MONGO_URI`)
 
