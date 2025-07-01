@@ -19,17 +19,17 @@ function makeSimpleStore() {
     messages: {
       messages: {},
       insert(jid, msgs = []) {
-        const entry = this.messages[jid] = this.messages[jid] || { array: [] };
+        const entry = this.messages.messages[jid] = this.messages.messages[jid] || { array: [] };
         entry.array.push(...msgs);
       }
     },
     loadMessage(jid, id) {
-      const arr = this.messages[jid]?.array;
+      const arr = this.messages.messages[jid]?.array;
       if (arr) {
         const msg = arr.find(m => m.key.id === id);
         if (msg) return msg;
       }
-      for (const entry of Object.values(this.messages)) {
+      for (const entry of Object.values(this.messages.messages)) {
         const found = entry.array.find(m => m.key.id === id);
         if (found) return found;
       }
@@ -40,13 +40,13 @@ function makeSimpleStore() {
       ev.on('messages.upsert', ({ messages }) => {
         for (const m of messages) {
           const jid = m.key.remoteJid;
-          this.messages[jid] = this.messages[jid] || { array: [] };
-          this.messages[jid].array.push(m);
+          this.messages.messages[jid] = this.messages.messages[jid] || { array: [] };
+          this.messages.messages[jid].array.push(m);
         }
       });
       ev.on('messages.update', updates => {
         for (const { key, update } of updates) {
-          const arr = this.messages[key.remoteJid]?.array;
+          const arr = this.messages.messages[key.remoteJid]?.array;
           if (!arr) continue;
           const idx = arr.findIndex(m => m.key.id === key.id);
           if (idx >= 0) arr[idx] = { ...arr[idx], ...update };
