@@ -55,7 +55,7 @@ Acesse `http://localhost:3000` para visualizar o painel.
 
  O painel possui uma aba **Docs** que carrega este README automaticamente.
  As instâncias disponíveis são atualizadas a cada 5 segundos, facilitando a seleção de conexões ativas. Todas elas ficam salvas em MongoDB e são restauradas quando o servidor inicia. O store de mensagens também é persistido no banco, permitindo descriptografar mensagens e enquetes. O servidor testa a conexão com o banco ao iniciar e encerra caso não consiga se conectar.
- Após escanear o QR code e a conexão abrir pela primeira vez, a sessão é reiniciada automaticamente para completar o pareamento.
+ Após escanear o QR code (ou quando o `connection.update` indica `isNewLogin`), a sessão é reiniciada automaticamente para completar o pareamento.
 
 Todas as rotas exigem o cabeçalho `x-api-key` com a chave definida em `GLOBAL_API_KEY`. As rotas que manipulam uma instância também exigem o cabeçalho `x-instance-key` com a chave própria daquela instância.
 

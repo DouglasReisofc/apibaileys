@@ -76,7 +76,7 @@ async function createInstance(id, webhook, apiKey) {
   sock.ev.on('connection.update', (update) => {
     const session = sessions[id];
     if (!session) return;
-    const { connection, lastDisconnect, qr } = update;
+    const { connection, lastDisconnect, qr, isNewLogin } = update;
     if (qr) {
       session.qr = qr;
       session.status = 'qr';
@@ -94,6 +94,10 @@ async function createInstance(id, webhook, apiKey) {
         setTimeout(() => restartInstance(id), 1000);
       }
       session.wasQr = false;
+    }
+    if (isNewLogin && !session.needsRestart) {
+      session.needsRestart = true;
+      setTimeout(() => restartInstance(id), 1000);
     }
     if (connection === 'close') {
       session.status = 'closed';
