@@ -101,6 +101,9 @@ async function createInstance(id, webhook, apiKey) {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       if (statusCode === DisconnectReason.loggedOut) {
         delete sessions[id];
+      } else if (statusCode === DisconnectReason.restartRequired && session.wasQr) {
+        session.wasQr = false;
+        setTimeout(() => createInstance(id), 1000);
       } else if (session.shouldReconnect) {
         createInstance(id);
       } else {
