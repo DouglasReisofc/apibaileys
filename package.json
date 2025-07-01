@@ -1,0 +1,21 @@
+{
+  "name": "apibaileys",
+  "version": "1.0.0",
+  "description": "📞 API WhatsApp com Baileys – Projeto #apibaileys Crie uma API robusta para integração com o WhatsApp usando a biblioteca Baileys, com foco em múltiplos agentes (sessions), envio de mensagens, recebimento de eventos e controle via HTTP.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.18",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mongodb": "^6.17.0",
+    "qrcode-terminal": "^0.12.0",
+    "pino": "^9.7.0"
+  }
+}
