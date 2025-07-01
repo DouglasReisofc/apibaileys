@@ -56,16 +56,28 @@ function optionHashMap(pollMsg) {
   return map;
 }
 
-function handlePollVote(id, msg) {
+async function handlePollVote(id, msg) {
   const pollUpdate = msg.message?.pollUpdateMessage;
   if (!pollUpdate) return;
   const session = sessions[id];
   const store = session.store;
   const creationKey = pollUpdate.pollCreationMessageKey;
-  const pollMsg = store.loadMessage(
+  let pollMsg = store.loadMessage(
     creationKey.remoteJid || msg.key.remoteJid,
     creationKey.id
   );
+  if (!pollMsg && session.sock.loadMessage) {
+    try {
+      pollMsg = await session.sock.loadMessage(
+        creationKey.remoteJid || msg.key.remoteJid,
+        creationKey.id
+      );
+      if (pollMsg) {
+        store.messages.insert(creationKey.remoteJid || msg.key.remoteJid, [pollMsg]);
+        session.write && session.write().catch(() => {});
+      }
+    } catch {}
+  }
   if (!pollMsg) {
     console.log(
       `❌ [pollVote] Mensagem da enquete nao encontrada no store`
@@ -230,7 +242,7 @@ async function createInstance(id, webhook, apiKey) {
           if (isPollCreation(m)) {
             handlePollCreation(id, m);
           } else {
-            handlePollVote(id, m);
+            await handlePollVote(id, m);
           }
         }
       } else if (event === 'messages.update') {
