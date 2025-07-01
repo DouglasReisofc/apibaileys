@@ -57,7 +57,7 @@ Os logs detalhados do Baileys são suprimidos (nível `silent`) para manter a
 saída do console limpa.
 
  O painel possui uma aba **Docs** que carrega este README automaticamente.
- As instâncias disponíveis são atualizadas a cada 5 segundos, facilitando a seleção de conexões ativas. Todas elas ficam salvas em MongoDB e são restauradas quando o servidor inicia. O store de mensagens também é persistido no banco, permitindo descriptografar mensagens e enquetes. Os eventos de `poll.update` recebidos pelo webhook trazem as opções e votantes já descriptografados. A decodificação usa a mensagem original guardada no MongoDB para revelar a opção escolhida em `selectedOptions`. O servidor testa a conexão com o banco ao iniciar e encerra caso não consiga se conectar.
+ As instâncias disponíveis são atualizadas a cada 5 segundos, facilitando a seleção de conexões ativas. Todas elas ficam salvas em MongoDB e são restauradas quando o servidor inicia. O store de mensagens também é persistido no banco, permitindo descriptografar mensagens e enquetes. Eventos `poll.create` e `poll.update` enviados ao webhook incluem os resultados agregados calculados com `getAggregateVotesInPollMessage`, revelando o nome das opções e os votantes. A decodificação usa a mensagem original guardada no MongoDB. O servidor testa a conexão com o banco ao iniciar e encerra caso não consiga se conectar.
  Após escanear o QR code (ou quando o `connection.update` indica `isNewLogin`), a sessão é reiniciada automaticamente para completar o pareamento.
 
 Todas as rotas exigem o cabeçalho `x-api-key` com a chave definida em `GLOBAL_API_KEY`. As rotas que manipulam uma instância também exigem o cabeçalho `x-instance-key` com a chave própria daquela instância.

@@ -23,6 +23,26 @@ async function getCollection() {
 
 const sessions = {};
 
+function isPollCreation(msg) {
+  return (
+    msg.message?.pollCreationMessage ||
+    msg.message?.pollCreationMessageV2 ||
+    msg.message?.pollCreationMessageV3
+  );
+}
+
+function handlePollCreation(id, msg) {
+  const results = getAggregateVotesInPollMessage({
+    message: msg.message,
+    pollUpdates: []
+  }, sessions[id].sock.user.id);
+  sendWebhookEvent(id, 'poll.create', {
+    key: msg.key,
+    poll: msg.message,
+    results
+  });
+}
+
 function optionHashMap(pollMsg) {
   const opts = pollMsg.message.pollCreationMessage?.options ||
     pollMsg.message.pollCreationMessageV2?.options ||
@@ -191,7 +211,11 @@ async function createInstance(id, webhook, apiKey) {
     for (const [event, data] of Object.entries(events)) {
       if (event === 'messages.upsert') {
         for (const m of data.messages || []) {
-          handlePollVote(id, m);
+          if (isPollCreation(m)) {
+            handlePollCreation(id, m);
+          } else {
+            handlePollVote(id, m);
+          }
         }
       } else if (event === 'messages.update') {
         for (const u of data) {
