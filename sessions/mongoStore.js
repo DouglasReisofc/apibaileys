@@ -1,5 +1,13 @@
 const { getStoreCollection } = require('../db');
 
+function toBuffer(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (obj._bsontype === 'Binary') return obj.buffer;
+  if (Array.isArray(obj)) return obj.map(toBuffer);
+  for (const k in obj) obj[k] = toBuffer(obj[k]);
+  return obj;
+}
+
 function makeSimpleStore() {
   const store = {
     chats: {
@@ -50,7 +58,7 @@ function makeSimpleStore() {
 
 async function useMongoStore(id, sock) {
   const col = await getStoreCollection();
-  const record = await col.findOne({ id }) || {};
+  const record = toBuffer(await col.findOne({ id }) || {});
   const store = makeSimpleStore();
 
   // load chats & messages
