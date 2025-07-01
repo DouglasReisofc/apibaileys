@@ -1,5 +1,12 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
-const { DisconnectReason, getAggregateVotesInPollMessage } = require('@whiskeysockets/baileys');
+const {
+  DisconnectReason,
+  getAggregateVotesInPollMessage,
+  decryptPollVote,
+  updateMessageWithPollUpdate,
+  getKeyAuthor,
+  sha256
+} = require('@whiskeysockets/baileys');
 const P = require('pino');
 const { getSessionCollection, getStoreCollection } = require('../db');
 const { useMongoAuthState } = require('./mongoAuthState');
@@ -15,6 +22,52 @@ async function getCollection() {
 }
 
 const sessions = {};
+
+function optionHashMap(pollMsg) {
+  const opts = pollMsg.message.pollCreationMessage?.options ||
+    pollMsg.message.pollCreationMessageV2?.options ||
+    pollMsg.message.pollCreationMessageV3?.options || [];
+  const map = {};
+  for (const opt of opts) {
+    const hash = sha256(Buffer.from(opt.optionName || '')).toString();
+    map[hash] = opt.optionName || '';
+  }
+  return map;
+}
+
+function handlePollVote(id, msg) {
+  const pollUpdate = msg.message?.pollUpdateMessage;
+  if (!pollUpdate) return;
+  const session = sessions[id];
+  const store = session.store;
+  const creationKey = pollUpdate.pollCreationMessageKey;
+  const pollMsg = store.loadMessage(creationKey.remoteJid || msg.key.remoteJid, creationKey.id);
+  if (!pollMsg) return;
+  const pollEncKey = pollMsg.messageContextInfo?.messageSecret;
+  if (!pollEncKey) return;
+  const vote = decryptPollVote(pollUpdate.vote, {
+    pollCreatorJid: getKeyAuthor(creationKey, session.sock.user.id),
+    pollMsgId: creationKey.id,
+    pollEncKey,
+    voterJid: getKeyAuthor(msg.key, session.sock.user.id)
+  });
+  updateMessageWithPollUpdate(pollMsg.message, {
+    pollUpdateMessageKey: msg.key,
+    vote,
+    senderTimestampMs: Number(pollUpdate.senderTimestampMs)
+  });
+  session.write && session.write().catch(() => {});
+  const results = getAggregateVotesInPollMessage(pollMsg, session.sock.user.id);
+  const map = optionHashMap(pollMsg);
+  const selectedOptions = vote.selectedOptions?.map(o => map[o.toString()] || 'Unknown') || [];
+  sendWebhookEvent(id, 'poll.update', {
+    pollCreationMessageKey: creationKey,
+    pollUpdateMessageKey: msg.key,
+    voter: getKeyAuthor(msg.key, session.sock.user.id),
+    selectedOptions,
+    results
+  });
+}
 
 async function saveRecord(id) {
   const col = await getCollection();
@@ -54,11 +107,12 @@ function sendWebhookEvent(id, type, data) {
   }).catch(() => {});
 }
 
-function initSessionRecord(id, sock, saveCreds, store, webhook, apiKey) {
+function initSessionRecord(id, sock, saveCreds, store, write, webhook, apiKey) {
   sessions[id] = {
     sock,
     saveCreds,
     store,
+    write,
     qr: null,
     status: 'connecting',
     webhook: webhook || null,
@@ -76,7 +130,7 @@ async function createInstance(id, webhook, apiKey) {
 
   const { state, saveCreds, setWebhook } = await useMongoAuthState(id);
   if (webhook) await setWebhook(webhook);
-  const { store, bind } = await useMongoStore(id);
+  const { store, bind, write } = await useMongoStore(id);
   const sock = makeWASocket({
     auth: state,
     logger: P({ level: 'silent' }),
@@ -87,7 +141,7 @@ async function createInstance(id, webhook, apiKey) {
   });
   bind(sock.ev);
 
-  initSessionRecord(id, sock, saveCreds, store, webhook, apiKey);
+  initSessionRecord(id, sock, saveCreds, store, write, webhook, apiKey);
   await saveRecord(id);
 
   sock.ev.on('creds.update', saveCreds);
@@ -135,7 +189,11 @@ async function createInstance(id, webhook, apiKey) {
   });
   sock.ev.process(async (events) => {
     for (const [event, data] of Object.entries(events)) {
-      if (event === 'messages.update') {
+      if (event === 'messages.upsert') {
+        for (const m of data.messages || []) {
+          handlePollVote(id, m);
+        }
+      } else if (event === 'messages.update') {
         for (const u of data) {
           if (u.update?.pollUpdates) {
             const creationKey = u.update.pollUpdates[0].pollCreationMessageKey;
