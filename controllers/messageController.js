@@ -1,4 +1,4 @@
-const { getInstance } = require('../sessions/sessionManager');
+const { getInstance, getSession } = require('../sessions/sessionManager');
 
 function buildQuoted(jid, quotedId) {
   if (!quotedId) return undefined;
@@ -67,13 +67,15 @@ async function deleteMessage(req, res) {
 
 async function sendPoll(req, res) {
   const { instance, number, question, options = [], multiple = false } = req.body;
-  const session = getInstance(instance);
+  const session = getSession(instance);
   if (!session) return res.status(404).json({ error: 'Instance not found' });
   try {
     const jid = `${number}@s.whatsapp.net`;
-    await session.sendMessage(jid, {
+    const sent = await session.sock.sendMessage(jid, {
       poll: { name: question, values: options, selectableCount: multiple ? options.length : 1 }
     });
+    session.store.messages.insert(jid, [sent]);
+    if (session.write) await session.write();
     res.json({ status: 'poll sent' });
   } catch (e) {
     res.status(500).json({ error: e.message });

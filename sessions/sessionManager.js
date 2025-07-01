@@ -238,7 +238,12 @@ async function createInstance(id, webhook, apiKey) {
           }
         }
       }
-      sendWebhookEvent(id, event, data);
+      if (
+        event !== 'messages.upsert' ||
+        !data?.messages?.some(m => m.message?.pollUpdateMessage)
+      ) {
+        sendWebhookEvent(id, event, data);
+      }
     }
   });
 
@@ -247,6 +252,10 @@ async function createInstance(id, webhook, apiKey) {
 
 function getInstance(id) {
   return sessions[id]?.sock;
+}
+
+function getSession(id) {
+  return sessions[id];
 }
 
 function getInstanceStatus(id) {
@@ -316,5 +325,6 @@ module.exports = {
   deleteInstance,
   listInstances,
   restoreInstances,
-  getRecord: getInstanceRecord
+  getRecord: getInstanceRecord,
+  getSession
 };
