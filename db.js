@@ -1,6 +1,6 @@
 const { MongoClient } = require('mongodb');
 
-const mongoUri = process.env.MONGO_URI || 'mongodb://admin:Shinobi7766@150.230.85.70:27017/?authSource=admin';
+const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/baileys';
 const client = new MongoClient(mongoUri);
 let db;
 

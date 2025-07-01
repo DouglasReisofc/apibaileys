@@ -77,7 +77,10 @@ function handlePollVote(id, msg) {
     senderTimestampMs: Number(pollUpdate.senderTimestampMs)
   });
   session.write && session.write().catch(() => {});
-  const results = getAggregateVotesInPollMessage(pollMsg, session.sock.user.id);
+  const results = getAggregateVotesInPollMessage({
+    message: pollMsg.message,
+    pollUpdates: pollMsg.message.pollUpdates
+  }, session.sock.user.id);
   const map = optionHashMap(pollMsg);
   const selectedOptions = vote.selectedOptions?.map(o => map[o.toString()] || 'Unknown') || [];
   sendWebhookEvent(id, 'poll.update', {
