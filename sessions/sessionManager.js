@@ -67,12 +67,14 @@ function handlePollVote(id, msg) {
     creationKey.id
   );
   if (!pollMsg) {
-    log(`poll message not found for ${creationKey.remoteJid} ${creationKey.id}`);
+    console.log(
+      `❌ [pollVote] Mensagem da enquete nao encontrada no store`
+    );
     return;
   }
   const pollEncKey = pollMsg.messageContextInfo?.messageSecret;
   if (!pollEncKey) {
-    log(`pollEncKey missing for ${creationKey.id}`);
+    console.log(`❌ [pollVote] pollEncKey ausente para ${creationKey.id}`);
     return;
   }
   const vote = decryptPollVote(pollUpdate.vote, {
@@ -93,6 +95,7 @@ function handlePollVote(id, msg) {
   }, session.sock.user.id);
   const map = optionHashMap(pollMsg);
   const selectedOptions = vote.selectedOptions?.map(o => map[o.toString()] || 'Unknown') || [];
+  console.log(`✅ [pollVote] Voto descriptografado com sucesso:`, selectedOptions);
   sendWebhookEvent(id, 'poll.update', {
     pollCreationMessageKey: creationKey,
     pollUpdateMessageKey: msg.key,
