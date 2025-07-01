@@ -15,8 +15,16 @@ function makeSimpleStore() {
       }
     },
     loadMessage(jid, id) {
-      const arr = this.messages[jid]?.array || [];
-      return arr.find(m => m.key.id === id);
+      const arr = this.messages[jid]?.array;
+      if (arr) {
+        const msg = arr.find(m => m.key.id === id);
+        if (msg) return msg;
+      }
+      for (const entry of Object.values(this.messages)) {
+        const found = entry.array.find(m => m.key.id === id);
+        if (found) return found;
+      }
+      return undefined;
     },
     bind(ev) {
       ev.on('chats.upsert', chats => this.chats.insertAll(chats));
