@@ -86,7 +86,15 @@ Todas as rotas exigem o cabeçalho `x-api-key` com a chave definida em `GLOBAL_A
 - `POST /api/group/:id/promote` – promove participantes.
 - `POST /api/group/:id/demote` – rebaixa participantes.
 - `POST /api/group/:id/leave` – sai do grupo.
- 
+- `GET /api/group/:id/invite` – recupera o link/convite do grupo.
+- `POST /api/group/:id/invite/revoke` – revoga o link do grupo.
+- `POST /api/group/join` – entra em um grupo usando `code` ou `link`.
+- `GET /api/group/invite/:code` – obtém informações de um convite.
+- `POST /api/group/:id/description` – define a descrição do grupo.
+- `POST /api/group/:id/setting` – atualiza configurações (`announcement`, `locked`).
+- `POST /api/group/:id/ephemeral` – define duração de mensagens temporárias.
+- `GET /api/groups` – lista todos os grupos da instância.
+
 #### Ações de Contatos
 - `GET /api/contact/:id/status` – busca o status do contato informando `instance` na query.
 - `POST /api/contact/:id/block` – bloqueia o contato.

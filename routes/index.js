@@ -39,7 +39,15 @@ const {
   promoteParticipants,
   demoteParticipants,
   leaveGroup,
-  fetchMetadata
+  fetchMetadata,
+  getInviteCode,
+  revokeInvite,
+  joinByCode,
+  inviteInfo,
+  updateDescription,
+  updateSetting,
+  toggleEphemeral,
+  listGroups
 } = require('../controllers/groupController');
 const { fetchStatus, block, unblock } = require('../controllers/contactController');
 
@@ -122,6 +130,14 @@ router.post('/group/:id/remove', checkInstance, removeParticipants);
 router.post('/group/:id/promote', checkInstance, promoteParticipants);
 router.post('/group/:id/demote', checkInstance, demoteParticipants);
 router.post('/group/:id/leave', checkInstance, leaveGroup);
+router.get('/group/:id/invite', checkInstance, getInviteCode);
+router.post('/group/:id/invite/revoke', checkInstance, revokeInvite);
+router.post('/group/join', checkInstance, joinByCode);
+router.get('/group/invite/:code', checkInstance, inviteInfo);
+router.post('/group/:id/description', checkInstance, updateDescription);
+router.post('/group/:id/setting', checkInstance, updateSetting);
+router.post('/group/:id/ephemeral', checkInstance, toggleEphemeral);
+router.get('/groups', checkInstance, listGroups);
 
 // Contact actions (PV)
 router.get('/contact/:id/status', checkInstance, fetchStatus);
