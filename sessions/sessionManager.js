@@ -11,6 +11,7 @@ const P = require('pino');
 const { getSessionCollection, getStoreCollection } = require('../db');
 const { useMongoAuthState } = require('./mongoAuthState');
 const { useMongoStore } = require('./mongoStore');
+const { log } = require('../utils/logger');
 
 let collection;
 
@@ -61,10 +62,19 @@ function handlePollVote(id, msg) {
   const session = sessions[id];
   const store = session.store;
   const creationKey = pollUpdate.pollCreationMessageKey;
-  const pollMsg = store.loadMessage(creationKey.remoteJid || msg.key.remoteJid, creationKey.id);
-  if (!pollMsg) return;
+  const pollMsg = store.loadMessage(
+    creationKey.remoteJid || msg.key.remoteJid,
+    creationKey.id
+  );
+  if (!pollMsg) {
+    log(`poll message not found for ${creationKey.remoteJid} ${creationKey.id}`);
+    return;
+  }
   const pollEncKey = pollMsg.messageContextInfo?.messageSecret;
-  if (!pollEncKey) return;
+  if (!pollEncKey) {
+    log(`pollEncKey missing for ${creationKey.id}`);
+    return;
+  }
   const vote = decryptPollVote(pollUpdate.vote, {
     pollCreatorJid: getKeyAuthor(creationKey, session.sock.user.id),
     pollMsgId: creationKey.id,
