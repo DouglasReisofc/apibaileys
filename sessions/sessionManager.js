@@ -66,16 +66,29 @@ async function handlePollVote(id, msg) {
     creationKey.remoteJid || msg.key.remoteJid,
     creationKey.id
   );
+  if (!pollMsg && typeof session.sock.loadMessage === 'function') {
+    try {
+      const full = await session.sock.loadMessage(
+        creationKey.remoteJid || msg.key.remoteJid,
+        creationKey.id
+      );
+      if (full) {
+        pollMsg = full;
+        store.messages.insert(creationKey.remoteJid || msg.key.remoteJid, [full]);
+        session.write && (await session.write());
+      }
+    } catch (err) {
+      log(`[pollVote] loadMessage failed: ${err.message}`);
+    }
+  }
   // poll messages are stored when created; if missing, cannot decrypt
   if (!pollMsg) {
-    console.log(
-      `❌ [pollVote] Mensagem da enquete nao encontrada no store`
-    );
+    log(`❌ [pollVote] Mensagem da enquete nao encontrada no store`);
     return;
   }
   const pollEncKey = pollMsg.messageContextInfo?.messageSecret;
   if (!pollEncKey) {
-    console.log(`❌ [pollVote] pollEncKey ausente para ${creationKey.id}`);
+    log(`❌ [pollVote] pollEncKey ausente para ${creationKey.id}`);
     return;
   }
   const vote = decryptPollVote(pollUpdate.vote, {
@@ -96,7 +109,7 @@ async function handlePollVote(id, msg) {
   }, session.sock.user.id);
   const map = optionHashMap(pollMsg);
   const selectedOptions = vote.selectedOptions?.map(o => map[o.toString()] || 'Unknown') || [];
-  console.log(`✅ [pollVote] Voto descriptografado com sucesso:`, selectedOptions);
+  log(`✅ [pollVote] Voto descriptografado com sucesso: ${selectedOptions.join(', ')}`);
   sendWebhookEvent(id, 'poll.update', {
     pollCreationMessageKey: creationKey,
     pollUpdateMessageKey: msg.key,
