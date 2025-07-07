@@ -213,7 +213,9 @@ async function hasInstanceKey(id, k) {
 
 /*──────────── EXPRESS API ─────────────────────────────────*/
 function startServer() {
-  const app = express(); app.use(express.json());
+  const app = express();
+  app.use(express.json());
+  app.use('/view', express.static(path.join(__dirname, 'public')));
 
   /*──────── CREATE (global key) ───────────────────────────*/
   app.post('/instance/create', async (req, res) => {
@@ -328,6 +330,131 @@ function startServer() {
     rec.sock.sendMessage(`${to}@s.whatsapp.net`, { text: message })
       .then(() => res.json({ ok: true }))
       .catch(e => { logger.error({ e }, 'send'); res.status(500).json({ error: e.message }); });
+  });
+
+  /* send-media */
+  app.post('/instance/:id/send-media', async (req, res) => {
+    const { to, url, type, caption } = req.body;
+    if (!to || !url || !type)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    const msg = { [type]: { url } };
+    if (caption) msg.caption = caption;
+    rec.sock.sendMessage(`${to}@s.whatsapp.net`, msg)
+      .then(() => res.json({ ok: true }))
+      .catch(e => { logger.error({ e }, 'media'); res.status(500).json({ error: e.message }); });
+  });
+
+  /* send-sticker */
+  app.post('/instance/:id/send-sticker', async (req, res) => {
+    const { to, url } = req.body;
+    if (!to || !url)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    rec.sock.sendMessage(`${to}@s.whatsapp.net`, { sticker: { url } })
+      .then(() => res.json({ ok: true }))
+      .catch(e => { logger.error({ e }, 'sticker'); res.status(500).json({ error: e.message }); });
+  });
+
+  /* react */
+  app.post('/instance/:id/react', async (req, res) => {
+    const { to, id, emoji } = req.body;
+    if (!to || !id || !emoji)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    const key = { remoteJid: `${to}@s.whatsapp.net`, id, fromMe: false };
+    rec.sock.sendMessage(key.remoteJid, { react: { text: emoji, key } })
+      .then(() => res.json({ ok: true }))
+      .catch(e => { logger.error({ e }, 'react'); res.status(500).json({ error: e.message }); });
+  });
+
+  /* mark-read */
+  app.post('/instance/:id/mark-read', async (req, res) => {
+    const { to, id } = req.body;
+    if (!to || !id)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    await rec.sock.readMessages([{ remoteJid: `${to}@s.whatsapp.net`, id }]);
+    res.json({ ok: true });
+  });
+
+  /* edit-message */
+  app.post('/instance/:id/edit-message', async (req, res) => {
+    const { to, id, text } = req.body;
+    if (!to || !id || !text)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    const key = { remoteJid: `${to}@s.whatsapp.net`, id, fromMe: true };
+    rec.sock.sendMessage(key.remoteJid, { text, edit: key })
+      .then(() => res.json({ ok: true }))
+      .catch(e => { logger.error({ e }, 'edit'); res.status(500).json({ error: e.message }); });
+  });
+
+  /* delete-message */
+  app.post('/instance/:id/delete-message', async (req, res) => {
+    const { to, id, everyone } = req.body;
+    if (!to || !id)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    const key = { remoteJid: `${to}@s.whatsapp.net`, id, fromMe: true };
+    rec.sock.sendMessage(key.remoteJid, { delete: key, ...(everyone && { fromMe: false }) })
+      .then(() => res.json({ ok: true }))
+      .catch(e => { logger.error({ e }, 'delete'); res.status(500).json({ error: e.message }); });
+  });
+
+  /* group-manage */
+  app.post('/instance/:id/group-manage', async (req, res) => {
+    const { gid, action, participants, subject, description, url } = req.body;
+    if (!gid || !action)
+      return res.status(400).json({ error: 'campos faltam' });
+
+    const rec = instances.get(req.params.id);
+    if (!rec?.sock) return res.status(404).json({ error: 'instância não ativa' });
+
+    try {
+      switch (action) {
+        case 'add':
+        case 'remove':
+        case 'promote':
+        case 'demote':
+          if (!participants) return res.status(400).json({ error: 'participants faltam' });
+          await rec.sock.groupParticipantsUpdate(`${gid}@g.us`, participants.map(j => `${j}@s.whatsapp.net`), action);
+          break;
+        case 'subject':
+          await rec.sock.groupUpdateSubject(`${gid}@g.us`, subject);
+          break;
+        case 'description':
+          await rec.sock.groupUpdateDescription(`${gid}@g.us`, description || '');
+          break;
+        case 'picture':
+          await rec.sock.updateProfilePicture(`${gid}@g.us`, { url });
+          break;
+        default:
+          return res.status(400).json({ error: 'ação inválida' });
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      logger.error({ e }, 'group');
+      res.status(500).json({ error: e.message });
+    }
   });
 
   /*──────── LISTEN ────────────────────────────────────────*/

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Baileys Instances</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #eee; }
+  </style>
+</head>
+<body>
+<h1>Gerenciador de Instâncias</h1>
+<button onclick="loadInstances()">Atualizar</button>
+<table id="inst"></table>
+<script>
+async function loadInstances() {
+  const res = await fetch('/instance?apikey=' + prompt('API KEY'));
+  const data = await res.json();
+  const tbl = document.getElementById('inst');
+  tbl.innerHTML = '<tr><th>ID</th><th>Telefone</th><th>Webhook</th></tr>';
+  data.instances.forEach(c => {
+    tbl.innerHTML += `<tr><td>${c.id}</td><td>${c.phone}</td><td>${c.webhook}</td></tr>`;
+  });
+}
+</script>
+</body>
+</html>
