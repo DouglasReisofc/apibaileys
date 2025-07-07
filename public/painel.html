@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Instâncias</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    form { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    input[type=text] { padding: 6px 8px; flex: 1; }
+    button { padding: 6px 10px; }
+    @media (max-width: 600px) {
+      body { margin: 10px; }
+      form { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<h1>Painel de Instâncias</h1>
+<div>
+  <label>API Key: <input id="apikey" type="text"></label>
+  <button onclick="load()">Carregar</button>
+</div>
+
+<h2>Criar nova instância</h2>
+<form onsubmit="return create(this)">
+  <input name="id" placeholder="ID" required>
+  <input name="phone" placeholder="Telefone">
+  <input name="webhook" placeholder="Webhook">
+  <button type="submit">Criar</button>
+</form>
+
+<h2>Instâncias</h2>
+<table id="inst">
+  <tr><th>ID</th><th>Telefone</th><th>Webhook</th><th>Ações</th></tr>
+</table>
+
+<script>
+let apiKey = '';
+
+function row(c) {
+  return `<tr><td>${c.id}</td><td>${c.phone || ''}</td><td>${c.webhook || ''}</td>`+
+         `<td><button onclick="startInst('${c.id}')">Start</button>`+
+         `<button onclick="stopInst('${c.id}')">Stop</button>`+
+         `<button onclick="editInst('${c.id}','${c.phone || ''}','${c.webhook || ''}')">Editar</button>`+
+         `<button onclick="delInst('${c.id}')">Excluir</button></td></tr>`;
+}
+
+async function load() {
+  apiKey = document.getElementById('apikey').value;
+  const res = await fetch('/instance?apikey=' + apiKey);
+  const data = await res.json();
+  const tbl = document.getElementById('inst');
+  tbl.innerHTML = '<tr><th>ID</th><th>Telefone</th><th>Webhook</th><th>Ações</th></tr>';
+  data.instances.forEach(c => tbl.innerHTML += row(c));
+}
+
+async function create(form) {
+  const data = Object.fromEntries(new FormData(form).entries());
+  await fetch('/instance/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: apiKey },
+    body: JSON.stringify(data)
+  });
+  form.reset();
+  load();
+  return false;
+}
+
+async function editInst(id, phone, webhook) {
+  phone = prompt('Telefone', phone) ?? phone;
+  webhook = prompt('Webhook', webhook) ?? webhook;
+  await fetch('/instance/' + id + '?apikey=' + apiKey, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, webhook })
+  });
+  load();
+}
+
+async function delInst(id) {
+  if (!confirm('Excluir ' + id + '?')) return;
+  await fetch('/instance/' + id + '?apikey=' + apiKey, { method: 'DELETE' });
+  load();
+}
+
+async function startInst(id) {
+  await fetch('/instance/' + id + '/start?apikey=' + apiKey, { method: 'POST' });
+  load();
+}
+
+async function stopInst(id) {
+  await fetch('/instance/' + id + '/stop?apikey=' + apiKey, { method: 'POST' });
+  load();
+}
+</script>
+</body>
+</html>

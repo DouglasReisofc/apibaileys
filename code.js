@@ -215,7 +215,8 @@ async function hasInstanceKey(id, k) {
 function startServer() {
   const app = express();
   app.use(express.json());
-  app.use('/view', express.static(path.join(__dirname, 'public')));
+  app.use('/painel',
+    express.static(path.join(__dirname, 'public'), { index: 'painel.html' }));
 
   /*──────── CREATE (global key) ───────────────────────────*/
   app.post('/instance/create', async (req, res) => {
