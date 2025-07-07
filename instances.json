@@ -6,6 +6,13 @@
       "webhook": "https://webhook.site/07b647a8-3206-45ab-9bfa-dd28c22c7e7c",
       "pairingCode": null,
       "instanceKey": "2854d0f6a6996dd014d0945a49c13d4c"
+    },
+    {
+      "id": "5592991129258",
+      "phone": "5592991129258",
+      "webhook": "http://localhost:7766/webhook/event",
+      "pairingCode": null,
+      "instanceKey": "a51e253cfcec76bd871ef7eadc127b84"
     }
   ]
 }

@@ -1,100 +1,528 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Painel de Instâncias</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f4f4f4; }
-    form { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-    input[type=text] { padding: 6px 8px; flex: 1; }
-    button { padding: 6px 10px; }
+    /* Reset and base */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1, h2 {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      color: #00fff7;
+      text-shadow: 0 0 10px #00fff7;
+    }
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(20, 30, 40, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00fff7aa;
+      padding: 20px 30px 40px 30px;
+    }
+    /* API Key input */
+    .apikey-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .apikey-section label {
+      flex: 1;
+      font-weight: 600;
+      color: #00fff7;
+    }
+    .apikey-section input {
+      flex: 3;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: #142c38;
+      color: #e0e0e0;
+      box-shadow: inset 0 0 5px #00fff7;
+      transition: box-shadow 0.3s ease;
+    }
+    .apikey-section input:focus {
+      box-shadow: inset 0 0 10px #00fff7;
+    }
+    .apikey-section button {
+      padding: 10px 20px;
+      background: #00fff7;
+      border: none;
+      border-radius: 8px;
+      color: #142c38;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00fff7;
+      transition: background 0.3s ease;
+    }
+    .apikey-section button:hover {
+      background: #00c9b1;
+    }
+    /* Form for new instance */
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 40px;
+    }
+    form input {
+      flex: 1 1 30%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: none;
+      background: #142c38;
+      color: #e0e0e0;
+      font-size: 1rem;
+      box-shadow: inset 0 0 5px #00fff7;
+      transition: box-shadow 0.3s ease;
+    }
+    form input:focus {
+      box-shadow: inset 0 0 10px #00fff7;
+      outline: none;
+    }
+    form button {
+      flex: 1 1 15%;
+      padding: 12px 15px;
+      background: #00fff7;
+      border: none;
+      border-radius: 8px;
+      color: #142c38;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00fff7;
+      transition: background 0.3s ease;
+    }
+    form button:hover {
+      background: #00c9b1;
+    }
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+      font-size: 1rem;
+      color: #e0e0e0;
+    }
+    thead th {
+      text-align: left;
+      padding: 12px 15px;
+      background: #00fff7;
+      color: #142c38;
+      font-weight: 700;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 0 10px #00fff7;
+    }
+    tbody tr {
+      background: #142c38;
+      box-shadow: 0 0 10px #00fff7aa;
+      transition: background 0.3s ease;
+      border-radius: 0 0 12px 12px;
+    }
+    tbody tr:hover {
+      background: #00fff7aa;
+      color: #142c38;
+      cursor: pointer;
+    }
+    tbody td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+    tbody td:last-child {
+      display: flex;
+      gap: 10px;
+    }
+    /* Buttons in table */
+    button.action-btn {
+      background: transparent;
+      border: 2px solid #00fff7;
+      border-radius: 8px;
+      color: #00fff7;
+      font-weight: 600;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    button.action-btn:hover {
+      background: #00fff7;
+      color: #142c38;
+      box-shadow: 0 0 10px #00fff7;
+    }
+    /* Modal backdrop */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+    /* Modal content */
+    .modal {
+      background: #203a43;
+      border-radius: 12px;
+      padding: 25px 30px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px #00fff7;
+      color: #e0e0e0;
+      position: relative;
+      animation: modalFadeIn 0.3s ease forwards;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #00fff7;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .modal label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #00fff7;
+    }
+    .modal input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      border: none;
+      background: #142c38;
+      color: #e0e0e0;
+      font-size: 1rem;
+      box-shadow: inset 0 0 8px #00fff7;
+      outline: none;
+      transition: box-shadow 0.3s ease;
+    }
+    .modal input:focus {
+      box-shadow: inset 0 0 12px #00fff7;
+    }
+    .modal .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+    }
+    .modal .modal-buttons button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      user-select: none;
+    }
+    .modal .btn-cancel {
+      background: transparent;
+      color: #00fff7;
+      border: 2px solid #00fff7;
+    }
+    .modal .btn-cancel:hover {
+      background: #00fff7;
+      color: #142c38;
+      box-shadow: 0 0 10px #00fff7;
+    }
+    .modal .btn-confirm {
+      background: #00fff7;
+      color: #142c38;
+    }
+    .modal .btn-confirm:hover {
+      background: #00c9b1;
+      box-shadow: 0 0 10px #00c9b1;
+    }
+    /* Responsive */
     @media (max-width: 600px) {
-      body { margin: 10px; }
-      form { flex-direction: column; }
+      .apikey-section {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      form input, form button {
+        flex: 1 1 100%;
+      }
+      tbody td:last-child {
+        flex-wrap: wrap;
+        gap: 5px;
+      }
     }
   </style>
 </head>
 <body>
-<h1>Painel de Instâncias</h1>
-<div>
-  <label>API Key: <input id="apikey" type="text"></label>
-  <button onclick="load()">Carregar</button>
-</div>
+  <div class="container">
+    <h1>Painel de Instâncias</h1>
+    <div class="apikey-section">
+      <label for="apikey">API Key:</label>
+      <input id="apikey" type="text" autocomplete="off" />
+      <button id="loadBtn">Carregar</button>
+    </div>
 
-<h2>Criar nova instância</h2>
-<form onsubmit="return create(this)">
-  <input name="id" placeholder="ID" required>
-  <input name="phone" placeholder="Telefone">
-  <input name="webhook" placeholder="Webhook">
-  <button type="submit">Criar</button>
-</form>
+    <h2>Criar nova instância</h2>
+    <form id="createForm">
+      <input name="id" placeholder="ID" required />
+      <input name="phone" placeholder="Telefone" />
+      <input name="webhook" placeholder="Webhook" />
+      <button type="submit">Criar</button>
+    </form>
 
-<h2>Instâncias</h2>
-<table id="inst">
-  <tr><th>ID</th><th>Telefone</th><th>Webhook</th><th>Ações</th></tr>
-</table>
+    <h2>Instâncias</h2>
+    <table id="inst">
+      <thead>
+        <tr><th>ID</th><th>Telefone</th><th>Webhook</th><th>Ações</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-<script>
-let apiKey = '';
+  <!-- Modal for editing instance -->
+  <div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" tabindex="-1">
+    <div class="modal">
+      <h3 id="editModalTitle">Editar Instância</h3>
+      <form id="editForm">
+        <label for="editPhone">Telefone</label>
+        <input id="editPhone" name="phone" type="text" />
+        <label for="editWebhook">Webhook</label>
+        <input id="editWebhook" name="webhook" type="text" />
+        <div class="modal-buttons">
+          <button type="button" class="btn-cancel" id="editCancelBtn">Cancelar</button>
+          <button type="submit" class="btn-confirm">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-function row(c) {
-  return `<tr><td>${c.id}</td><td>${c.phone || ''}</td><td>${c.webhook || ''}</td>`+
-         `<td><button onclick="startInst('${c.id}')">Start</button>`+
-         `<button onclick="stopInst('${c.id}')">Stop</button>`+
-         `<button onclick="editInst('${c.id}','${c.phone || ''}','${c.webhook || ''}')">Editar</button>`+
-         `<button onclick="delInst('${c.id}')">Excluir</button></td></tr>`;
-}
+  <!-- Modal for delete confirmation -->
+  <div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" tabindex="-1">
+    <div class="modal">
+      <h3 id="deleteModalTitle">Confirmar Exclusão</h3>
+      <p>Tem certeza que deseja excluir a instância <strong id="deleteInstanceId"></strong>?</p>
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" id="deleteCancelBtn">Cancelar</button>
+        <button type="button" class="btn-confirm" id="deleteConfirmBtn">Excluir</button>
+      </div>
+    </div>
+  </div>
 
-async function load() {
-  apiKey = document.getElementById('apikey').value;
-  const res = await fetch('/instance?apikey=' + apiKey);
-  const data = await res.json();
-  const tbl = document.getElementById('inst');
-  tbl.innerHTML = '<tr><th>ID</th><th>Telefone</th><th>Webhook</th><th>Ações</th></tr>';
-  data.instances.forEach(c => tbl.innerHTML += row(c));
-}
+  <!-- Modal for pairing code display -->
+  <div id="pairingModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pairingModalTitle" tabindex="-1">
+    <div class="modal">
+      <h3 id="pairingModalTitle">Pairing Code</h3>
+      <p>Pairing code da instância <strong id="pairingInstanceId"></strong>:</p>
+      <pre id="pairingCodeDisplay" style="background:#142c38; padding:10px; border-radius:8px; user-select: text; font-size: 1.1rem; color:#00fff7;"></pre>
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" id="pairingCancelBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
 
-async function create(form) {
-  const data = Object.fromEntries(new FormData(form).entries());
-  await fetch('/instance/create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: apiKey },
-    body: JSON.stringify(data)
-  });
-  form.reset();
-  load();
-  return false;
-}
+    <script>
+    let apiKey = '';
+    let editInstanceId = null;
+    let deleteInstanceId = null;
 
-async function editInst(id, phone, webhook) {
-  phone = prompt('Telefone', phone) ?? phone;
-  webhook = prompt('Webhook', webhook) ?? webhook;
-  await fetch('/instance/' + id + '?apikey=' + apiKey, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, webhook })
-  });
-  load();
-}
+    const loadBtn = document.getElementById('loadBtn');
+    const apikeyInput = document.getElementById('apikey');
+    const instTableBody = document.querySelector('#inst tbody');
+    const createForm = document.getElementById('createForm');
 
-async function delInst(id) {
-  if (!confirm('Excluir ' + id + '?')) return;
-  await fetch('/instance/' + id + '?apikey=' + apiKey, { method: 'DELETE' });
-  load();
-}
+    const editModal = document.getElementById('editModal');
+    const editForm = document.getElementById('editForm');
+    const editPhoneInput = document.getElementById('editPhone');
+    const editWebhookInput = document.getElementById('editWebhook');
+    const editCancelBtn = document.getElementById('editCancelBtn');
 
-async function startInst(id) {
-  await fetch('/instance/' + id + '/start?apikey=' + apiKey, { method: 'POST' });
-  load();
-}
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteInstanceIdElem = document.getElementById('deleteInstanceId');
+    const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
 
-async function stopInst(id) {
-  await fetch('/instance/' + id + '/stop?apikey=' + apiKey, { method: 'POST' });
-  load();
-}
-</script>
+    const pairingModal = document.getElementById('pairingModal');
+    const pairingInstanceIdElem = document.getElementById('pairingInstanceId');
+    const pairingCodeDisplay = document.getElementById('pairingCodeDisplay');
+    const pairingCancelBtn = document.getElementById('pairingCancelBtn');
+
+    function row(c) {
+      return `
+        <tr>
+          <td>${c.id}</td>
+          <td>${c.phone || ''}</td>
+          <td>${c.webhook || ''}</td>
+          <td>
+            <button class="action-btn" onclick="startInst('${c.id}')">Start</button>
+            <button class="action-btn" onclick="stopInst('${c.id}')">Stop</button>
+            <button class="action-btn" onclick="openEditModal('${c.id}', '${c.phone || ''}', '${c.webhook || ''}')">Editar</button>
+            <button class="action-btn" onclick="openDeleteModal('${c.id}')">Excluir</button>
+            <button class="action-btn" onclick="openPairingModal('${c.id}')">Pairing</button>
+          </td>
+        </tr>`;
+    }
+
+    async function load() {
+      apiKey = apikeyInput.value.trim();
+      if (!apiKey) {
+        alert('Por favor, insira a API Key.');
+        return;
+      }
+      const res = await fetch('/instance?apikey=' + apiKey);
+      if (!res.ok) {
+        alert('Erro ao carregar instâncias.');
+        return;
+      }
+      const data = await res.json();
+      instTableBody.innerHTML = '';
+      data.instances.forEach(c => {
+        instTableBody.innerHTML += row(c);
+      });
+    }
+
+    function openPairingModal(id) {
+      if (!apiKey) {
+        alert('Por favor, insira a API Key.');
+        return;
+      }
+      fetch('/instance/' + id + '/pairing-code?apikey=' + apiKey)
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ao obter pairing code');
+          return res.json();
+        })
+        .then(data => {
+          pairingInstanceIdElem.textContent = id;
+          pairingCodeDisplay.textContent = data.pairingCode || '(não disponível)';
+          pairingModal.classList.add('active');
+        })
+        .catch(() => {
+          alert('Erro ao obter pairing code.');
+        });
+    }
+
+    pairingCancelBtn.addEventListener('click', () => {
+      pairingModal.classList.remove('active');
+      pairingInstanceIdElem.textContent = '';
+      pairingCodeDisplay.textContent = '';
+    });
+
+    createForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!apiKey) {
+        alert('Por favor, insira a API Key.');
+        return;
+      }
+      const formData = new FormData(createForm);
+      const data = Object.fromEntries(formData.entries());
+      const res = await fetch('/instance/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: apiKey },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        alert('Erro ao criar instância.');
+        return;
+      }
+      createForm.reset();
+      load();
+    });
+
+    function openEditModal(id, phone, webhook) {
+      editInstanceId = id;
+      editPhoneInput.value = phone;
+      editWebhookInput.value = webhook;
+      editModal.classList.add('active');
+      editPhoneInput.focus();
+    }
+
+    editCancelBtn.addEventListener('click', () => {
+      editModal.classList.remove('active');
+      editInstanceId = null;
+    });
+
+    editForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!editInstanceId) return;
+      const phone = editPhoneInput.value.trim();
+      const webhook = editWebhookInput.value.trim();
+      const res = await fetch('/instance/' + editInstanceId + '?apikey=' + apiKey, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, webhook })
+      });
+      if (!res.ok) {
+        alert('Erro ao editar instância.');
+        return;
+      }
+      editModal.classList.remove('active');
+      editInstanceId = null;
+      load();
+    });
+
+    function openDeleteModal(id) {
+      deleteInstanceId = id;
+      deleteInstanceIdElem.textContent = id;
+      deleteModal.classList.add('active');
+    }
+
+    deleteCancelBtn.addEventListener('click', () => {
+      deleteModal.classList.remove('active');
+      deleteInstanceId = null;
+    });
+
+    deleteConfirmBtn.addEventListener('click', async () => {
+      if (!deleteInstanceId) return;
+      const res = await fetch('/instance/' + deleteInstanceId + '?apikey=' + apiKey, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        alert('Erro ao excluir instância.');
+        return;
+      }
+      deleteModal.classList.remove('active');
+      deleteInstanceId = null;
+      load();
+    });
+
+    async function startInst(id) {
+      const res = await fetch('/instance/' + id + '/start?apikey=' + apiKey, { method: 'POST' });
+      if (!res.ok) {
+        alert('Erro ao iniciar instância.');
+        return;
+      }
+      load();
+    }
+
+    async function stopInst(id) {
+      const res = await fetch('/instance/' + id + '/stop?apikey=' + apiKey, { method: 'POST' });
+      if (!res.ok) {
+        alert('Erro ao parar instância.');
+        return;
+      }
+      load();
+    }
+
+    loadBtn.addEventListener('click', load);
+  </script>
 </body>
 </html>
